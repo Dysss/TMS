@@ -1,0 +1,7 @@
+import { redirect } from "@sveltejs/kit";
+
+import { axiosInstance } from "./axios";
+
+export async function handle({ event, resolve }) {
+    const protectedRoutes = 
+}
