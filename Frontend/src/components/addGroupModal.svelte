@@ -1,7 +1,7 @@
 <script>
-	import { axiosInstance } from '../../axios';
+	import { axiosInstance } from '../axios';
 	import { createEventDispatcher, onMount } from 'svelte';
-	import Toast from '../toast/+page.svelte';
+	import Toast from './toast.svelte';
 
 	export let showModal = false;
 	// export let existingGroups;

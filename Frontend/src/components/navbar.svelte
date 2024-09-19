@@ -1,7 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { axiosInstance } from '../../axios';
+	import { axiosInstance } from '../axios';
 
 	let isAdmin = false;
 	let username;

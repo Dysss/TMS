@@ -3,8 +3,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { error } from '@sveltejs/kit';
-	import TopNavbar from '../../components/navbar/+page.svelte';
-	import Toast from '../../components/toast/+page.svelte';
+	import TopNavbar from '../../components/navbar.svelte';
+	import Toast from '../../components/toast.svelte';
 
 	let username = '';
 	let email = '';

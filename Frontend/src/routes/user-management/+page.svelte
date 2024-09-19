@@ -1,11 +1,11 @@
 <script>
 	import { onMount } from 'svelte';
 	import { axiosInstance } from '../../axios';
-	import TopNavbar from '../../components/navbar/+page.svelte';
+	import TopNavbar from '../../components/navbar.svelte';
 	import Error from '../+error.svelte';
 	import { goto } from '$app/navigation';
-	import Toast from '../../components/toast/+page.svelte';
-	import AddGroupModal from '../../components/addGroupModal/+page.svelte';
+	import Toast from '../../components/toast.svelte';
+	import AddGroupModal from '../../components/addGroupModal.svelte';
 	import MultiSelect from 'svelte-multiselect';
 	import axios from 'axios';
 

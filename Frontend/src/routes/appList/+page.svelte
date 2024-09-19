@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { axiosInstance } from '../../axios';
 	import { onMount } from 'svelte';
-	import TopNavbar from '../../components/navbar/+page.svelte';
+	import TopNavbar from '../../components/navbar.svelte';
 
 	let res;
 	let apps = [

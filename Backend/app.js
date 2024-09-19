@@ -8,9 +8,7 @@ const dotenv = require("dotenv");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const userRoute = require("./routes/user.js");
-const authRoute = require("./routes/auth.js");
-const groupRoute = require("./routes/group.js");
+const route = require("./routes/route.js");
 
 dotenv.config({ path: "./config/config.env" });
 
@@ -27,9 +25,7 @@ app.use(express.json());
 app.use(helmet());
 app.use(cookieParser());
 
-app.use("/api/auth", authRoute);
-app.use("/api/users", userRoute);
-app.use("/api/groups", groupRoute);
+app.use("/api", route);
 
 app.listen(PORT, () => {
     console.log(`Listening on port ${PORT}`);

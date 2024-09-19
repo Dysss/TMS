@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { axiosInstance } from '../../axios';
-	import Toast from '../../components/toast/+page.svelte';
+	import Toast from '../../components/toast.svelte';
 
 	let username = '';
 	let password = '';
