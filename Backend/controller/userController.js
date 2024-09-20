@@ -173,6 +173,7 @@ exports.addUser = async (req, res) => {
 
 // Required input: group
 exports.checkCurrUserGroup = async (req, res) => {
+    // console.log(req);
     const username = req.user.username;
     const group = req.body.group;
 

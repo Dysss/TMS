@@ -7,21 +7,6 @@
 	let username;
 	export let pageTitle = 'TMS';
 
-	async () => {
-		try {
-			const logoutRes = await axiosInstance.get('/api/auth/logout');
-
-			if (logoutRes.status == 200) {
-				console.log('logged out')
-				goto('/login');
-			} else {
-				console.log(logoutRes);
-			}
-		} catch (err) {
-			console.log(err);
-		}
-	};
-
 	onMount(async () => {
 		console.log("Mounting navbar")
 		try {
@@ -46,8 +31,8 @@
 				username = getUsernameRes.data.data[0].user_name;
 			}
 		} catch (err) {
-			console.log("User unauthorized");
-			goto('/login')
+			console.log("Unknown error");
+			logout();
 		}
 	});
 
@@ -56,6 +41,7 @@
 			const logoutRes = await axiosInstance.get('/api/auth/logout');
 
 			if (logoutRes.status == 200) {
+				console.log("Logging out");
 				goto('/login');
 			} else {
 				console.log(logoutRes);
