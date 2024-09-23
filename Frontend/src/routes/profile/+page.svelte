@@ -110,7 +110,7 @@
 		return validEmail.test(email);
 	};
 
-	const triggerToast = (message) => {
+	const triggerToast = (message, color) => {
 		statusMsg = message;
 		showToast = true;
 

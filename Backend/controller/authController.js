@@ -18,70 +18,6 @@ const generateJWT = (username, ip, ua) => {
     return token;
 };
 
-exports.authenticateJWT = (req, res, next) => {
-    // Grab jwt from cookies
-    const token = req.cookies.jwt;
-
-    // If no token
-    if (!token) {
-        return res.status(401).json({
-            success: false,
-            error: "User not logged in",
-        });
-    }
-
-    // Verify jwt
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-        // Check for valid jwt
-        if (err) {
-            if (err.name == "TokenExpiredError") {
-                res.clearCookie("jwt");
-
-                return res.status(401).json({
-                    success: false,
-                    error: "JWT token expired. Please log in.",
-                });
-            } else if (err.name == "JsonWebTokenError") {
-                return res.status(401).json({
-                    success: false,
-                    error: "JWT token invalid. Please log in",
-                });
-            } else {
-                return res.status(401).json({
-                    success: false,
-                    error: err.message,
-                });
-            }
-        }
-
-        // Check if ip and ua are the same
-        if (decoded.ip != req.ip || decoded.ua != req.headers["user-agent"]) {
-            console.log("Received ");
-            console.log(decoded);
-            return res.status(401).json({
-                success: false,
-                error: "JWT token invalid.",
-            });
-        }
-
-        // Check if user is active
-        let [queryResults, fields] = await pool.execute(`SELECT active FROM user WHERE user_name = ?`, [decoded.username]);
-
-        isActive = queryResults[0].active;
-        console.log("Is active: ", isActive);
-        if (!isActive) {
-            return res.status(401).json({
-                success: false,
-                error: "User is disabled",
-            });
-        }
-
-        // Attach username to req.user
-        req.user = decoded;
-        next();
-    });
-};
-
 exports.checkGroup = async (username, groupname) => {
     let [queryResults, fields] = await pool.execute(`SELECT * FROM user u JOIN user_group ug ON u.user_name = ug.user_name JOIN group_list g ON ug.group_id = g.group_id WHERE u.user_name = ? AND g.group_name = ?`, [username, groupname]);
 
@@ -133,8 +69,8 @@ exports.authorizeRoles = (...roles) => {
 
         // Check if ip and ua are the same
         if (decoded.ip != req.ip || decoded.ua != req.headers["user-agent"]) {
-            console.log("Received ");
-            console.log(decoded);
+            // console.log("Received ");
+            // console.log(decoded);
             return res.status(401).json({
                 success: false,
                 error: "JWT token invalid.",
@@ -156,12 +92,10 @@ exports.authorizeRoles = (...roles) => {
         req.user = decoded;
 
         if (roles.length == 0) {
-            console.log("Outside verify: ");
-            console.log(req.user);
             return next();
         }
 
-        console.log(roles);
+        // console.log(roles);
 
         for (const role of roles) {
             // Check if user has authorized role
