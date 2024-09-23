@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { login, logout, verify, authorizeRoles } = require("../controller/authController");
+const { login, logout, verify, authorizeRoles, authorizeAppRoles } = require("../controller/authController");
 const { getProfile, updateEmail, updatePassword, userList, updateActive, updateGroup, addUser, checkCurrUserGroup } = require("../controller/userController");
 const { getAllGroups, addGroup } = require("../controller/groupController");
 const { getAllApps, createApp, getAppDetails, updateApp } = require("../controller/appsController");
@@ -37,5 +37,7 @@ router.get("/plan/get-all-plans", authorizeRoles("pl", "pm"), getAllPlans);
 router.post("/plan/get-plan-details", authorizeRoles("pl", "pm"), getPlanDetails);
 router.put("/plan/create-plan", authorizeRoles("pm"), createPlan);
 router.put("/plan/update-plan", authorizeRoles("pm"), updatePlan);
+
+// Task routes
 
 module.exports = router;
