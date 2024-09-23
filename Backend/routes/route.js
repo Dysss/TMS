@@ -5,6 +5,7 @@ const { login, logout, verify, authorizeRoles } = require("../controller/authCon
 const { getProfile, updateEmail, updatePassword, userList, updateActive, updateGroup, addUser, checkCurrUserGroup } = require("../controller/userController");
 const { getAllGroups, addGroup } = require("../controller/groupController");
 const { getAllApps, createApp, getAppDetails, updateApp } = require("../controller/appsController");
+const { getAllPlans, getPlanDetails, createPlan, updatePlan } = require("../controller/planController");
 
 // Auth roles
 router.post("/auth/login", login);
@@ -32,6 +33,9 @@ router.put("/app/create-app", authorizeRoles("pl"), createApp);
 router.put("/app/update-app", authorizeRoles("pl"), updateApp);
 
 // Plan routes
-// router.put("")
+router.get("/plan/get-all-plans", authorizeRoles("pl", "pm"), getAllPlans);
+router.post("/plan/get-plan-details", authorizeRoles("pl", "pm"), getPlanDetails);
+router.put("/plan/create-plan", authorizeRoles("pm"), createPlan);
+router.put("/plan/update-plan", authorizeRoles("pm"), updatePlan);
 
 module.exports = router;

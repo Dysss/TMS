@@ -9,6 +9,7 @@ exports.getAllApps = async (req, res) => {
         });
     } catch (err) {
         console.log(err);
+        return res.status(500);
     }
 };
 
@@ -23,6 +24,7 @@ exports.getAppDetails = async (req, res) => {
         });
     } catch (err) {
         console.log(err);
+        return res.status(500);
     }
 };
 
@@ -47,6 +49,7 @@ exports.createApp = async (req, res) => {
         });
     } catch (err) {
         console.log(err);
+        return res.status(500);
     }
 };
 
@@ -68,5 +71,6 @@ exports.updateApp = async (req, res) => {
         });
     } catch (err) {
         console.log(err);
+        return res.status(500);
     }
 };
