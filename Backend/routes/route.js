@@ -6,6 +6,7 @@ const { getProfile, updateEmail, updatePassword, userList, updateActive, updateG
 const { getAllGroups, addGroup } = require("../controller/groupController");
 const { getAllApps, createApp, getAppDetails, updateApp } = require("../controller/appsController");
 const { getAllPlans, getPlanDetails, createPlan, updatePlan } = require("../controller/planController");
+const { getAllTasks, createTask, updateTaskNotes, updateTaskPlan, updateTaskState } = require("../controller/taskController");
 
 // Auth roles
 router.post("/auth/login", login);
@@ -39,5 +40,10 @@ router.put("/plan/create-plan", authorizeRoles("pm"), createPlan);
 router.put("/plan/update-plan", authorizeRoles("pm"), updatePlan);
 
 // Task routes
+router.get("/task/get-app-tasks", authorizeRoles(), getAllTasks);
+router.put("/task/create-task", authorizeAppRoles, createTask);
+router.put("/task/update-task-notes", authorizeAppRoles, updateTaskNotes);
+router.put("/task/update-task-plan", authorizeAppRoles, updateTaskPlan);
+router.put("/task/update-task-state", authorizeAppRoles, updateTaskState);
 
 module.exports = router;
