@@ -17,6 +17,7 @@
 
 	let statusMsg = '';
 	let showToast = false;
+	let toastType;
 
 	const fetchDetails = async () => {
 		const response = await axiosInstance.get('/api/users/profile');
@@ -49,15 +50,15 @@
 				});
 
 				if (response.data.success == true) {
-					triggerToast('Email successfully updated');
+					triggerToast('Email successfully updated', 'success');
 					newEmail = '';
 					fetchDetails();
 				} else {
-					triggerToast('Error: Failed to update email');
+					triggerToast('Error: Failed to update email', 'error');
 					console.log(response.data);
 				}
 			} else {
-				triggerToast('Error: Invalid email format');
+				triggerToast('Error: Invalid email format', 'error');
 			}
 		} catch (err) {
 			console.log(err);
@@ -77,15 +78,15 @@
 				});
 
 				if (response.data.success == true) {
-					triggerToast('Password successfully updated');
+					triggerToast('Password successfully updated', 'success');
 					newPassword = '';
 					fetchDetails();
 				} else {
-					triggerToast('Error: Failed to update email');
+					triggerToast('Error: Failed to update email', 'error');
 				}
 			} else {
 				triggerToast(
-					'Error: Invalid password format. Please use a password of 8-10 characters consisting of alphabets, numbers and special characters'
+					'Error: Invalid password format. Please use a password of 8-10 characters consisting of alphabets, numbers and special characters', 'error'
 				);
 			}
 		} catch (err) {
@@ -110,9 +111,10 @@
 		return validEmail.test(email);
 	};
 
-	const triggerToast = (message, color) => {
+	const triggerToast = (message, type='info') => {
 		statusMsg = message;
 		showToast = true;
+		toastType = type;
 
 		setTimeout(() => {
 			showToast = false;
@@ -140,7 +142,7 @@
 		<button type="submit" disabled={updatingPassword}>Update password</button>
 	</form>
 
-	<Toast message={statusMsg} visible={showToast} duration="2000" />
+	<Toast message={statusMsg} visible={showToast} type={toastType} duration="2000" />
 </div>
 
 <style>

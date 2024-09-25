@@ -11,6 +11,7 @@
 	let groupName = '';
 	let showToast = false;
 	let statusMsg = '';
+	let toastType;
 	let existingGroups;
 	
 	const fetchGroups = async () => {
@@ -29,12 +30,12 @@
 		if (groupName) {
 			if (!verifyGroup(groupName)) {
 				return triggerToast(
-					'Invalid group name. Group names can only consist of alphanumeric and underscore characters'
+					'Invalid group name. Group names can only consist of alphanumeric and underscore characters', 'error'
 				);
 			}
 
 			if (existingGroups.includes(groupName)) {
-				return triggerToast('Error: Group already exists');
+				return triggerToast('Group already exists', 'error');
 			}
 
 			const addGroupRes = await axiosInstance.put('/api/groups/add-group', {
@@ -46,8 +47,9 @@
 			}
 
 			fetchGroups();
+			return triggerToast('Group created successfully', 'success');
 		} else {
-			return triggerToast('Please enter a group name');
+			return triggerToast('Please enter a group name', 'error');
 		}
 	};
 
@@ -62,9 +64,10 @@
 	};
 
 
-	const triggerToast = (message) => {
+	const triggerToast = (message, type='info') => {
 		statusMsg = message;
 		showToast = true;
+		toastType = type;
 
 		setTimeout(() => {
 			showToast = false;
@@ -84,7 +87,7 @@
 	</div>
 {/if}
 
-<Toast message={statusMsg} visible={showToast} duration="2000" />
+<Toast message={statusMsg} visible={showToast} type={toastType} duration="2000" />
 
 <style>
 	.modal-backdrop {

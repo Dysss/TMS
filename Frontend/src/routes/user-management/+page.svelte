@@ -18,6 +18,7 @@
 	let newUserGroups = [];
 	let statusMsg;
 	let showToast;
+	let toastType;
 	let showAddGrpModal = false;
 
 	const verifyAdmin = async () => {
@@ -92,14 +93,14 @@
 			if (!validatePassword(targetUserDetails.password)) {
 				console.log(targetUserDetails.password);
 				triggerToast(
-					'Invalid password. Please use a password of 8-10 characters consisting of alphabets, numbers and special characters'
+					'Invalid password. Please use a password of 8-10 characters consisting of alphabets, numbers and special characters', 'error'
 				);
 				return;
 			}
 		}
 
 		if (!validateEmail(targetUserDetails.email)) {
-			triggerToast('Invalid email. Please input a proper email');
+			triggerToast('Invalid email. Please input a proper email', 'error');
 			return;
 		}
 
@@ -154,6 +155,7 @@
 			});
 
 			// console.log(`Groups updated \n ${updateGroupsRes}`);
+			triggerToast("User updated successfully", 'success');
 		} catch (err) {
 			console.log(err);
 		} finally {
@@ -200,21 +202,21 @@
 
 		// Check if user already exist
 		if (!validateUsername(newUserDetails.user_name)) {
-			triggerToast('Error: User already exists');
+			triggerToast('Error: User already exists', 'error');
 			return;
 		}
 
 		// Check valid password
 		if (!validatePassword(newUserDetails.password)) {
 			triggerToast(
-				'Invalid password. Please include password of 8-10 characters that contain a character, number and special character'
+				'Invalid password. Please include password of 8-10 characters that contain a character, number and special character', 'error'
 			);
 			return;
 		}
 
 		// Check valid email
 		if (!validateEmail(newUserDetails.email)) {
-			triggerToast('Invalid email. Please input a proper email');
+			triggerToast('Invalid email. Please input a proper email', 'error');
 		}
 
 		try {
@@ -228,16 +230,18 @@
 			newUserDetails = {};
 			newUserGroups = [];
 			newUserTemplate();
-
 			fetchDetails();
+
+			triggerToast("User created successfully", 'success');
 		} catch (err) {
 			console.log(err);
 		}
 	};
 
-	const triggerToast = (message) => {
+	const triggerToast = (message, type='info') => {
 		statusMsg = message;
 		showToast = true;
+		toastType = type;
 
 		setTimeout(() => {
 			showToast = false;
@@ -340,9 +344,9 @@
 			</tr>
 		</tbody>
 	</table>
-
-	<Toast message={statusMsg} visible={showToast} duration="2000" />
 </div>
+
+<Toast message={statusMsg} visible={showToast} type={toastType} duration="2000" />
 
 <style>
 	table {

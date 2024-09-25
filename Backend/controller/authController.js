@@ -66,6 +66,13 @@ exports.authorizeAppRoles = async (req, res, next) => {
 
         // console.log("Preliminary checks cleared");
 
+        if (taskState == "closed") {
+            return res.status(401).json({
+                success: false,
+                error: "Unauthorized",
+            });
+        }
+
         // Construct sql query by concatenating task state
         const sqlQuery = "SELECT app_permit_" + taskState + " FROM application WHERE app_acronym = ?";
 

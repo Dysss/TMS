@@ -29,7 +29,7 @@ router.put("/groups/add-group", authorizeRoles("admin"), addGroup);
 
 // Application routes
 router.get("/app/get-all-apps-overview", authorizeRoles(), getAllApps);
-router.get("/app/get-app-details", authorizeRoles(), getAppDetails);
+router.post("/app/get-app-details", authorizeRoles(), getAppDetails);
 router.put("/app/create-app", authorizeRoles("pl"), createApp);
 router.put("/app/update-app", authorizeRoles("pl"), updateApp);
 

@@ -10,13 +10,14 @@
 	let isLoading = false;
 	let statusMsg = '';
 	let showToast = false;
+	let toastType;
 
 	const login = async () => {
 		isLoading = true;
 		errorMsg = '';
 
 		if (!username || !password) {
-			triggerToast('Incorrect credentials');
+			triggerToast('Incorrect credentials', 'error');
 			isLoading = false;
 		} else {
 			try {
@@ -33,7 +34,7 @@
 					goto('/appList');
 				} else {
 					console.log(res.data)
-					triggerToast('Incorrect credentials');
+					triggerToast('Incorrect credentials', 'error');
 				}
 			} catch (err) {
 				console.log(err);
@@ -44,9 +45,10 @@
 		}
 	};
 
-	const triggerToast = (message) => {
+	const triggerToast = (message, type='info') => {
 		statusMsg = message;
 		showToast = true;
+		toastType = type;
 
 		setTimeout(() => {
 			showToast = false;
@@ -71,7 +73,7 @@
 		</button>
 	</form>
 
-	<Toast message={statusMsg} visible={showToast} duration="2000" />
+	<Toast message={statusMsg} visible={showToast} type={toastType} duration="2000" />
 </div>
 
 <style>
