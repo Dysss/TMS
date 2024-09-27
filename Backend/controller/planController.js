@@ -2,7 +2,8 @@ const pool = require("../utils/db");
 
 exports.getAllPlans = async (req, res) => {
     try {
-        let [queryResults, fields] = await pool.execute("SELECT plan_MVP_name FROM plan");
+        const appAcronym = req.body.app_Acronym;
+        let [queryResults, fields] = await pool.execute("SELECT plan_MVP_name, plan_color FROM plan WHERE plan_app_Acronym = ?", [appAcronym]);
 
         return res.status(200).json({
             success: true,

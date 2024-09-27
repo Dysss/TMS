@@ -34,13 +34,13 @@ router.put("/app/create-app", authorizeRoles("pl"), createApp);
 router.put("/app/update-app", authorizeRoles("pl"), updateApp);
 
 // Plan routes
-router.get("/plan/get-all-plans", authorizeRoles("pl", "pm"), getAllPlans);
+router.post("/plan/get-all-plans", authorizeRoles("pl", "pm"), getAllPlans);
 router.post("/plan/get-plan-details", authorizeRoles("pl", "pm"), getPlanDetails);
 router.put("/plan/create-plan", authorizeRoles("pm"), createPlan);
 router.put("/plan/update-plan", authorizeRoles("pm"), updatePlan);
 
 // Task routes
-router.get("/task/get-app-tasks", authorizeRoles(), getAllTasks);
+router.post("/task/get-app-tasks", authorizeRoles(), getAllTasks);
 router.put("/task/create-task", authorizeAppRoles, createTask);
 router.put("/task/update-task-notes", authorizeAppRoles, updateTaskNotes);
 router.put("/task/update-task-plan", authorizeAppRoles, updateTaskPlan);

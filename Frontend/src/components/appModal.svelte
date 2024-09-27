@@ -30,7 +30,7 @@
 			targetApp = response.data.data[0];
 			targetApp.app_startDate = targetApp.app_startDate.split("-").reverse().join("-");	// Reverse input to match html standard
 			targetApp.app_endDate = targetApp.app_endDate.split("-").reverse().join("-");
-			console.log(response)
+			// console.log(response)
 		} else {
 			console.log("Target app acronym: ", targetAppAcronym)
 		}
@@ -52,11 +52,12 @@
 	}
 
 	onMount(() => {
-		console.log(targetAppAcronym)
+		// console.log(targetAppAcronym)
 		fetchGroups();
-		initNewApp();
 		if (editMode) {
 			fetchAppDetails();
+		} else {
+			initNewApp();
 		}
 	});
 
@@ -360,5 +361,17 @@
 	.modal-actions button {
 		margin-left: 10px;
 		padding: 10px;
+		background-color: #007bff;
+		color: white;
+		border: none;
+		border-radius: 5px;
+		cursor: pointer;
+	}
+
+	.modal-actions button:hover {
+		background-color: #0056b3;
+		border: none;
+		border-radius: 5px;
+		cursor: pointer;
 	}
 </style>

@@ -8,7 +8,7 @@
 	export let pageTitle = 'TMS';
 
 	onMount(async () => {
-		console.log("Mounting navbar")
+		// console.log("Mounting navbar")
 		try {
 			const checkActive = await axiosInstance.get('/api/auth/verify');
 

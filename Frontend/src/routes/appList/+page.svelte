@@ -6,6 +6,7 @@
 	import TopNavbar from '../../components/navbar.svelte';
 	import AppModal from '../../components/appModal.svelte';
 	import axios from 'axios';
+	import { sharedAppAcronym } from '$lib/store';
 
 	let isPL;
 	let apps = [];
@@ -43,13 +44,20 @@
 		showAppModal = false;
 		await fetchApps()
 	}
+
+	const gotoApp = (appAcronym) => {
+		sharedAppAcronym.set(appAcronym);
+		goto('/app');
+	}
 </script>
 
 <TopNavbar pageTitle="App List" />
 
 <div class="header">
 	<h1>Applications</h1>
-	<button class="create-btn" on:click={() => openAppModal(false, null)}>Create App</button>
+	{#if isPL}
+		<button class="create-btn" on:click={() => openAppModal(false, null)}>Create App</button>
+	{/if}
 </div>
 
 {#if appModalEditMode !== null}
@@ -63,8 +71,10 @@
 				<h2>{app.app_acronym}</h2>
 				<p>{app.app_description}</p>
 				<p>{app.app_rnumber}</p>
-				<button on:click={() => console.log(`Viewing app ${app.id}`)}>View</button>
-				<button on:click={() => openAppModal(true, app.app_acronym)}>Edit</button>
+				<button on:click={() => gotoApp(app.app_acronym)}>View</button>
+				{#if isPL}
+					<button on:click={() => openAppModal(true, app.app_acronym)}>Edit</button>
+				{/if}
 			</div>
 		{/each}
 	</div>
@@ -115,7 +125,7 @@
 
 	button:hover {
 		padding: 10px 20px;
-		background-color: #0052aa;
+		background-color: #0056b3;
 		color: white;
 		border: none;
 		border-radius: 5px;

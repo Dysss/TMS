@@ -297,7 +297,7 @@
 						</td>
 						<td>
 							<button on:click|preventDefault={saveUser}>Save</button>
-							<button on:click|preventDefault={cancelEdit}>Cancel</button>
+							<button on:click|preventDefault={cancelEdit} style="background-color: #ff0000;">Cancel</button>
 						</td>
 					</tr>
 				{:else}
@@ -386,7 +386,7 @@
 
 	button {
 		padding: 5px 10px;
-		background-color: #4caf50;
+		background-color: #007bff;
 		color: white;
 		border: none;
 		border-radius: 4px;
@@ -394,7 +394,7 @@
 	}
 
 	button:hover {
-		background-color: #45a049;
+		background-color: #0056b3;
 	}
 
 	td button {
