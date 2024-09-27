@@ -64,7 +64,7 @@
 
 <Navbar pageTitle="{app_Acronym} details" />
 
-<PlansModal showModal={showPlansModal} on:close={closePlansModal} editMode={plansModalEditMode} targetPlanName={targetPlanName} />
+<PlansModal showModal={showPlansModal} on:close={closePlansModal} editMode={plansModalEditMode} targetPlanName={targetPlanName} appAcronym={app_Acronym} />
 
 <div class="kanban-wrapper">
     <!-- Create app and plans buttons -->
@@ -72,9 +72,10 @@
         <div class="dropdown">
             <button>Plans</button>
             <div class="plans-dropdown">
-                {#each plans as plan}
-                    <a on:click={() => openPlansModal(true, plan.plan_MVP_name)}>{plan.plan_MVP_name}</a>
-                {/each}
+              {#each plans as plan}
+                  <a on:click={() => openPlansModal(true, plan.plan_MVP_name)}>{plan.plan_MVP_name}</a>
+              {/each}
+              <a on:click={() => openPlansModal(false, null)}>Create plan</a>
             </div>
         </div>
     </div>
