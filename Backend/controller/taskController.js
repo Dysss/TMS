@@ -16,6 +16,29 @@ exports.getAllTasks = async (req, res) => {
     }
 };
 
+exports.getTaskDetails = async (req, res) => {
+    try {
+        const task_id = req.body.task_id;
+
+        let [queryResults, fields] = await pool.execute("SELECT * FROM task WHERE task_id = ?", [task_id]);
+
+        if (queryResults.length == 0) {  
+            return res.status(400).json({
+                success: true,
+                data: "Invalid task id"
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: queryResults
+        })
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ success: false });
+    }
+}
+
 exports.createTask = async (req, res) => {
     // Get connection
     const conn = await pool.getConnection();
@@ -26,7 +49,7 @@ exports.createTask = async (req, res) => {
         const task_description = req.body.task_description || null;
         const task_notes = req.body.task_notes || null;
         const task_plan = req.body.task_plan || null;
-        const task_app_acronym = req.body.task_app_acronym;
+        const task_app_acronym = req.body.task_app_Acronym;
         const task_state = "open";
         const task_creator = req.body.task_creator;
         const task_owner = req.body.task_owner;
@@ -38,7 +61,7 @@ exports.createTask = async (req, res) => {
         // Fetch and increment rnumber to form task id
         let [app_rnumber] = (await conn.execute("SELECT app_rnumber FROM application WHERE app_acronym = ?", [task_app_acronym]))[0];
         app_rnumber = app_rnumber.app_rnumber + 1;
-        const task_id = req.body.task_app_acronym + "_" + app_rnumber;
+        const task_id = req.body.task_app_Acronym + "_" + app_rnumber;
         // console.log(task_id)
 
         // Create task entry
@@ -101,7 +124,7 @@ exports.updateTaskPlan = async (req, res) => {
     try {
         const taskId = req.body.task_id;
         const newPlan = req.body.task_plan;
-        const testAcronym = req.body.task_app_acronym;
+        const testAcronym = req.body.task_app_Acronym;
 
         let [queryResults, fields] = await pool.execute("UPDATE task SET task_plan = ?, task_app_acronym = ? WHERE task_id = ?", [newPlan, testAcronym, taskId]);
 

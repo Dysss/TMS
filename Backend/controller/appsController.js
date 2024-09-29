@@ -15,7 +15,7 @@ exports.getAllApps = async (req, res) => {
 
 exports.getAppDetails = async (req, res) => {
     try {
-        acronym = req.body.app_acronym;
+        acronym = req.body.app_Acronym;
 
         let [queryResults, fields] = await pool.execute("SELECT * FROM application WHERE app_acronym = ?", [acronym]);
         return res.status(200).json({

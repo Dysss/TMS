@@ -30,13 +30,13 @@ const fetchPlanDetails = async () => {
     // Convert date formats to match html format
     targetPlan.plan_startDate = convertDateFormat(targetPlan.plan_startDate);
     targetPlan.plan_endDate = convertDateFormat(targetPlan.plan_endDate);
-	
+
     // Add # before color hexadecimal numbers
     targetPlan.plan_color = "#" + targetPlan.plan_color
 
-	// Add correct app acronym key name
-	targetPlan.plan_app_acronym = targetPlan.plan_app_Acronym;
-	
+    // Add correct app acronym key name
+    targetPlan.plan_app_acronym = targetPlan.plan_app_Acronym;
+
     // console.log(targetPlan)
 }
 
@@ -70,12 +70,12 @@ const convertDateFormat = (date) => {
 
 const editPlan = async () => {
     try {
-		targetPlan.plan_color = targetPlan.plan_color.slice(1);
+        targetPlan.plan_color = targetPlan.plan_color.slice(1);
         console.log(targetPlan);
         let response = await axiosInstance.put("/api/plan/update-plan", targetPlan);
 
-		triggerToast("Successfully edited plan", 'success')
-		await fetchPlanDetails();
+        triggerToast("Successfully edited plan", 'success')
+        await fetchPlanDetails();
 
         // console.log(response)
     } catch (err) {
@@ -85,12 +85,12 @@ const editPlan = async () => {
 
 const createPlan = async () => {
     try {
-		console.log(targetPlan);
-		targetPlan.plan_color = targetPlan.plan_color.slice(1);
+        console.log(targetPlan);
+        targetPlan.plan_color = targetPlan.plan_color.slice(1);
         let response = await axiosInstance.put("/api/plan/create-plan", targetPlan);
 
-		triggerToast("Successfully created plan", 'success')
-		initNewPlan();
+        triggerToast("Successfully created plan", 'success')
+        initNewPlan();
 
         // console.log(response)
     } catch (err) {
@@ -160,13 +160,13 @@ $: if (showModal) {
             />
     </div>
     <div class="modal-actions">
-		{#if editMode}
-			<button on:click={editPlan}>Edit Plan</button>
-			<button on:click={closeModal}>Cancel</button>
-		{:else}
-			<button on:click={createPlan}>Add plan</button>
-			<button on:click={closeModal}>Cancel</button>
-		{/if}
+        {#if editMode}
+        <button on:click={editPlan}>Edit Plan</button>
+        <button on:click={closeModal}>Cancel</button>
+        {:else}
+        <button on:click={createPlan}>Add plan</button>
+        <button on:click={closeModal}>Cancel</button>
+        {/if}
     </div>
 </div>
 {/if}

@@ -81,12 +81,17 @@ exports.authenticateJWT = (req, res, next) => {
 };
 
 exports.checkGroup = async (username, groupname) => {
-    let [queryResults, fields] = await pool.execute(`SELECT * FROM user u JOIN user_group ug ON u.user_name = ug.user_name JOIN group_list g ON ug.group_id = g.group_id WHERE u.user_name = ? AND g.group_name = ?`, [username, groupname]);
-
-    if (queryResults.length == 0) {
+    try {
+        let [queryResults, fields] = await pool.execute(`SELECT * FROM user u JOIN user_group ug ON u.user_name = ug.user_name JOIN group_list g ON ug.group_id = g.group_id WHERE u.user_name = ? AND g.group_name = ?`, [username, groupname]);
+    
+        if (queryResults.length == 0) {
+            return false;
+        } else {
+            return true;
+        }
+    } catch (err) {
+        console.log(err)
         return false;
-    } else {
-        return true;
     }
 };
 

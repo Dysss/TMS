@@ -160,7 +160,6 @@
 			<label for="app-description">Description</label>
 			<textarea 
 				id="app-description" 
-				type="text" 
 				bind:value={targetApp.app_description} 
 				placeholder="App description" 
 			/>

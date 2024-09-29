@@ -33,7 +33,7 @@ exports.authorizeAppRoles = async (req, res, next) => {
     try {
         const token = req.cookies.jwt;
         const taskState = req.body.task_state || "create";
-        const appAcronym = req.body.task_app_acronym;
+        const appAcronym = req.body.task_app_Acronym;
 
         // If no token
         if (!token) {
