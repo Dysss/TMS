@@ -15,6 +15,7 @@
 	let groupList = [];
 	let toastType;
     let targetApp;
+	let appAcronyms;
 	
 	const fetchGroups = async () => {
 		// Grab group list and convert to array
@@ -25,15 +26,21 @@
 	const fetchAppDetails = async () => {
 		if (targetAppAcronym) {
 			const response = await axiosInstance.post('/api/app/get-app-details', {
-				app_acronym: targetAppAcronym
+				app_Acronym: targetAppAcronym
 			});
 			targetApp = response.data.data[0];
 			targetApp.app_startDate = targetApp.app_startDate.split("-").reverse().join("-");	// Reverse input to match html standard
 			targetApp.app_endDate = targetApp.app_endDate.split("-").reverse().join("-");
-			// console.log(response)
+			console.log(response)
 		} else {
 			console.log("Target app acronym: ", targetAppAcronym)
 		}
+	}
+
+	const fetchApps = async () => {
+		let response = await axiosInstance.get('/api/app/get-all-apps-overview');
+
+		appAcronyms = response.data.data.map(app => app.app_acronym);
 	}
 
 	const initNewApp = () => {
@@ -51,15 +58,15 @@
 		}
 	}
 
-	onMount(() => {
-		// console.log(targetAppAcronym)
-		fetchGroups();
-		if (editMode) {
-			fetchAppDetails();
-		} else {
-			initNewApp();
-		}
-	});
+	// onMount(() => {
+	// 	// console.log(targetAppAcronym)
+	// 	fetchGroups();
+	// 	if (editMode) {
+	// 		fetchAppDetails();
+	// 	} else {
+	// 		initNewApp();
+	// 	}
+	// });
 
 	$: if (showModal) {
 		fetchGroups();
@@ -67,6 +74,7 @@
 			fetchAppDetails();
 		} else {
 			initNewApp();
+			fetchApps();
 		}
 	}
 
@@ -79,6 +87,14 @@
 
 		if (targetApp.app_Acronym.length > 64) {
 			return triggerToast("App acronym length cannot exceed 64 characters.", 'error');
+		}
+
+		if (!verifyAppAcronym(targetApp.app_Acronym)) {
+			return triggerToast("App acronym can only contain alphanumeric and underscore characters", 'error')
+		}
+
+		if (appAcronyms.includes(targetApp.app_Acronym)) {
+			return triggerToast("App acronym already exists", 'error');
 		}
 
 		// Check app description
@@ -121,6 +137,12 @@
 		}
 	}
 
+	const verifyAppAcronym = (acronym) => {
+		const validAcronym = /^[a-zA-Z0-9_]+$/;
+
+		return validAcronym.test(acronym)
+	}
+
 	const closeModal = () => {
 		dispatch('close');
 	};
@@ -137,7 +159,7 @@
 	};
 </script>
 
-{#if showModal && groupList.length != 0}
+{#if showModal && groupList.length != 0 && targetApp}
 	<div class="modal-backdrop" on:click={closeModal}></div>
 	<div class="modal">
 		{#if editMode}
@@ -373,4 +395,5 @@
 		border-radius: 5px;
 		cursor: pointer;
 	}
+
 </style>

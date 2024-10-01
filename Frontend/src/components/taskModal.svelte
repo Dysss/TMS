@@ -19,22 +19,42 @@ let showToast = false;
 let statusMsg = '';
 let toastType;
 let targetTask;
+let targetPlan;
 let plans;
 let username;
-let newTaskNotes;
+let addTaskNotes;
 
 let permissions;
 let hasOpenPerms = false;
 let hasTodoPerms = false;
 let hasDoingPerms = false;
 let hasDonePerms = false;
+let planEditable = false;
 
 // Fetch task details
 const fetchTaskDetails = async () => {
     const response = await axiosInstance.post('/api/task/get-task-details', { task_id: targetTaskId })
     targetTask = (response.data.data)[0];
 
-    console.log((response.data.data)[0]);
+    if (targetTask.task_notes) {
+        targetTask["task_notes_arr"] = targetTask.task_notes.split("␟");
+    } else {
+        targetTask["task_notes_arr"] = []
+    }
+
+    targetPlan = targetTask.task_plan;
+
+    await checkDonePerms();
+    await checkOpenPerms();
+
+    if ((targetTask.task_state == "open" && hasOpenPerms) || (targetTask.task_state == "done" && hasDonePerms)) {
+        planEditable = true;
+    } else {
+        planEditable = false;
+    }
+
+    // await checkPlanEditable();
+    console.log(planEditable)
 }
 
 // Fetch list of plans
@@ -42,7 +62,7 @@ const fetchPlans = async () => {
     const response = await axiosInstance.post('/api/plan/get-all-plans', { app_Acronym: appAcronym })
 
     plans = response.data.data
-    console.log(plans)
+    // console.log(plans)
 }
 
 // Fetch user name
@@ -50,13 +70,14 @@ const fetchUserDetails = async () => {
     const response = await axiosInstance.get('/api/users/profile')
 
     username = (response.data.data)[0].user_name;
-    console.log(username)
+    // console.log(username)
 }
 
 // Get plan permissions
 const fetchAppPermissions = async () => {
     const response = await axiosInstance.post('/api/app/get-app-details', { app_Acronym: appAcronym });
 
+    
     permissions = (({
         app_permit_Create,
         app_permit_Open,
@@ -70,18 +91,21 @@ const fetchAppPermissions = async () => {
         app_permit_Doing,
         app_permit_Done
     }))(response.data.data[0])
-
-    checkOpenPerms();
-    checkTodoPerms();
-    checkDoingPerms();
-    checkDonePerms();
+    
+    await checkOpenPerms();
+    await checkTodoPerms();
+    await checkDoingPerms();
+    await checkDonePerms();
 }
 
 const checkOpenPerms = async () => {
     if (permissions) {
         const response = await axiosInstance.post('/api/users/check-group', { group: permissions.app_permit_Open })
+
+        // console.log(response)
         
         hasOpenPerms = response.data.result
+        // console.log(hasOpenPerms)
     }
 }
 
@@ -90,6 +114,7 @@ const checkTodoPerms = async () => {
         const response = await axiosInstance.post('/api/users/check-group', { group: permissions.app_permit_toDoList })
         
         hasTodoPerms = response.data.result
+        // console.log(hasTodoPerms)
     }
 }
 
@@ -97,7 +122,8 @@ const checkDoingPerms = async () => {
     if (permissions) {
         const response = await axiosInstance.post('/api/users/check-group', { group: permissions.app_permit_Doing })
         
-        hasOpenPerms = response.data.result
+        hasDoingPerms = response.data.result
+        // console.log(hasDoingPerms)
     }
 }
 
@@ -105,7 +131,8 @@ const checkDonePerms = async () => {
     if (permissions) {
         const response = await axiosInstance.post('/api/users/check-group', { group: permissions.app_permit_Done })
         
-        hasOpenPerms = response.data.result
+        hasDonePerms = response.data.result
+        // console.log(hasDonePerms)
     }
 }
 
@@ -127,8 +154,6 @@ const initNewTask = async () => {
     const mm = monthInt < 10 ? "0" + monthInt.toString() : monthInt.toString();
     const yyyy = currDate.getFullYear().toString();
     const dateStr = dd + "-" + mm + "-" + yyyy
-
-    // const createDate = 
 
     targetTask = {
         task_id: taskId,
@@ -154,14 +179,105 @@ const createTask = async () => {
 
     const response = await axiosInstance.put('/api/task/create-task', targetTask);
 
-    console.log("Response: ", response)
+    // console.log("Response: ", response)
     closeModal();
 }
 
+const checkPlanEditable = async () => {
+    // console.log("Checking if plan is editable: ")
+
+    // fetchAppPermissions();
+    
+    console.log("Has open perms: ", hasOpenPerms)
+    console.log("Has done perms: ", hasDonePerms)
+    console.log("Task is doing or done: ", targetTask.task_state != "doing" || targetTask.task_state != "done");
+    
+    planEditable = hasOpenPerms && hasDonePerms && (targetTask.task_state == "doing" || targetTask.task_state == "done")
+
+}
+
+const updateNotes = async (stateChange=null) => {
+    console.log("Adding task notes")
+
+    if (stateChange || addTaskNotes) {
+        const timestamp = new Date().toString()
+    
+        if (addTaskNotes) {
+            targetTask.task_notes_arr.unshift(addTaskNotes);
+        }
+
+        if (stateChange) {
+            let stateChangeMsg = `Task state updated to ${stateChange}`
+            targetTask.task_notes_arr.unshift(stateChangeMsg);
+        }
+    
+        targetTask.task_notes_arr.unshift(timestamp);
+        
+        // console.log(targetTask.task_notes_arr)
+        
+        const newTaskNotes = targetTask.task_notes_arr.join("␟")
+        
+        const response = await axiosInstance.put('/api/task/update-task-notes', {
+            task_app_Acronym: appAcronym,
+            task_id: targetTask.task_id,
+            task_notes: newTaskNotes
+        })
+        
+        addTaskNotes = "";
+        fetchTaskDetails();
+        // console.log(response.data);
+    }
+    console.log("Added task notes")
+}
+
+const updateTaskPlan = async () => {
+    console.log(targetTask)
+    // console.log(targetPlan)
+    if (targetTask.task_plan != targetPlan) {
+        console.log("Updating task plan")
+        const response = await axiosInstance.put('/api/task/update-task-plan', {
+            task_app_Acronym: appAcronym,
+            task_id: targetTask.task_id,
+            task_plan:targetTask.task_plan,
+            task_state: targetTask.task_state,
+        })
+
+    }
+    console.log("Updated task plan")
+}
+
+const updateTaskState = async (action) => {
+    const response = await axiosInstance.put('/api/task/update-task-state', {
+        task_app_Acronym: appAcronym,
+        task_id: targetTask.task_id,
+        task_state: targetTask.task_state,
+        action: action,
+    })
+
+    await fetchTaskDetails();
+    updateNotes(targetTask.task_state)
+
+    closeModal();
+
+    // console.log(response.data)
+}
+
+const triggerToast = (message, type="info") => {
+    console.log("trigger toast")
+    statusMsg = message;
+    showToast = true;
+    toastType = type;
+
+    setTimeout(() => {
+        showToast = false;
+    }, 2000);
+};
+
 $: if (showModal) {
-    newTaskNotes = ""
+    addTaskNotes = ""
     fetchPlans();
     fetchUserDetails();
+    fetchAppPermissions();
     if (editMode) {
         fetchTaskDetails();
     } else {
@@ -170,11 +286,7 @@ $: if (showModal) {
 }
 </script>
 
-<!-- 
-Modifiable:
-task_plan (PM, PL)
-task_notes: all
--->
+<Toast message={statusMsg} visible={showToast} type={toastType}  duration="2000" />
 
 {#if showModal && (typeof targetTask) == 'object'}
 <div class="modal-backdrop" on:click={closeModal}></div>
@@ -188,8 +300,10 @@ task_notes: all
         <p class="task-description">{targetTask.task_description}</p>
         <p class="task-state"><b>State:</b> {targetTask.task_state}</p>
         <label for="task-plan"><b>Plan:</b> </label>
-        <select name="task-plan">
-            <option>Some option</option>
+        <select name="task-plan" disabled={!planEditable} bind:value={targetTask.task_plan}>
+            {#each plans as plan}
+            <option value={plan.plan_MVP_name}>{plan.plan_MVP_name}</option>
+            {/each}
         </select>
         <p class="task-creator"><b>Creator:</b> {targetTask.task_creator}</p>
         <p class="task-owner"><b>Owner:</b> {targetTask.task_owner}</p>
@@ -197,11 +311,20 @@ task_notes: all
     </div>
     <div class="edit-task-notes-area">
         <p><b>Notes</b></p>
-        <p class="task-notes">{targetTask.task_notes}</p>
-        <textarea
-            class="task-notes-input"
-            bind:value={newTaskNotes}
-        />
+        <div class="task-notes">
+            {#each targetTask.task_notes_arr as taskNote}
+                <p>{taskNote}</p>
+            {/each}
+        </div>
+        {#if targetTask.task_state == "open" && hasOpenPerms ||
+            targetTask.task_state == "todolist" && hasTodoPerms ||
+            targetTask.task_state == "doing" && hasDoingPerms ||
+            targetTask.task_state == "done" && hasDonePerms
+        }
+        <textarea class="task-notes-input" bind:value={addTaskNotes} />
+        {:else}
+        <textarea class="task-notes-input" bind:value={addTaskNotes}  disabled/>
+        {/if}
     </div>
     <!-- <div class="modal-actions">
         <button>Do sometings</button>
@@ -245,17 +368,35 @@ task_notes: all
     {/if}
     <div class="modal-actions">
         {#if editMode}
-        <button on:click={closeModal}>Close</button>
-            {#if targetTask.task_state == "open" && hasOpenPerms ||
-                 targetTask.task_state == "todolist" && hasTodoPerms ||
-                 targetTask.task_state == "doing" && hasDoingPerms ||
-                 targetTask.task_state == "done" && hasDonePerms
-            }
-            <button>Save changes</button>
+            <button on:click={closeModal}>Close</button>
+            {#if targetTask.task_state != "closed"}
+                {#if targetTask.task_state == "open" && hasOpenPerms ||
+                    targetTask.task_state == "todolist" && hasTodoPerms ||
+                    targetTask.task_state == "doing" && hasDoingPerms ||
+                    targetTask.task_state == "done" && hasDonePerms
+                }
+                    <!-- Save changes -->
+                    <button on:click={() => {
+                        updateNotes();
+                        updateTaskPlan();
+                    }} >
+                        Save changes
+                    </button>
+                    <!-- Demote -->
+                    {#if targetTask.task_state == "doing" || targetTask.task_state == "done"}
+                        <button on:click={() => updateTaskState('demote')}>Demote</button>
+                    {:else}
+                        <button on:click={() => triggerToast("Task cannot be demoted in the current state", 'error')} disabled>Demote</button>
+                    {/if}
+                    <!-- Promote -->
+                    <button on:click={() => updateTaskState('promote')}>Promote</button>
+                {:else}
+                    <button on:click={() => triggerToast("Insufficient permissions", 'error')} disabled >Save changes</button>
+                {/if}
             {/if}
         {:else}
-        <button on:click={closeModal}>Cancel</button>
-        <button on:click={createTask}>Create task</button>
+            <button on:click={closeModal}>Cancel</button>
+            <button on:click={createTask}>Create task</button>
         {/if}
     </div>
 </div>
@@ -281,7 +422,8 @@ task_notes: all
         padding: 20px;
         border-radius: 8px;
 		width: 65vw;
-		max-height: 80vh;
+		/* max-height: 80vh; */
+        height: 80vh;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         z-index: 100;
     }
@@ -325,6 +467,11 @@ task_notes: all
         background-color: #0056b3;
     }
     
+	.modal-actions button:disabled {
+		background-color: gray;
+		cursor: not-allowed;
+	}
+    
     .modal::after {
         content: "";
         display: table;
@@ -341,7 +488,8 @@ task_notes: all
 
     .edit-task-notes-area {
         width: 70%;
-        min-height: 100%;
+        min-height: 80%;
+        /* height: 100%; */
         float: left;
         padding: 10px 0 10px 10px;
         box-sizing: border-box;
@@ -351,19 +499,27 @@ task_notes: all
     .task-notes {
         height: 70%;
         border: 1px solid black;
-        padding: 18px;
+        padding: 4px 12px;
         box-sizing: border-box;
         min-height: 230px;
+        max-height: 230px;
         overflow-y: auto;
+        white-space: pre-wrap;
+    }
+
+    .task-notes p {
+        margin: 0;
     }
 
     .task-notes-input {
         width: 100%;
+        min-height: 20vh;
         border: 1px solid black; 
         padding: 10px; /* Padding inside the border */
         box-sizing: border-box; /* Ensure padding and border are included in the width */
         margin-top: 10px; /* Space between task-notes and input */
         overflow-y: auto;
+        resize: none;
     }
 
 	.form-group {

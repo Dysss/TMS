@@ -22,22 +22,22 @@ exports.getTaskDetails = async (req, res) => {
 
         let [queryResults, fields] = await pool.execute("SELECT * FROM task WHERE task_id = ?", [task_id]);
 
-        if (queryResults.length == 0) {  
+        if (queryResults.length == 0) {
             return res.status(400).json({
                 success: true,
-                data: "Invalid task id"
-            })
+                data: "Invalid task id",
+            });
         }
 
         return res.status(200).json({
             success: true,
-            data: queryResults
-        })
+            data: queryResults,
+        });
     } catch (err) {
         console.log(err);
         return res.status(500).json({ success: false });
     }
-}
+};
 
 exports.createTask = async (req, res) => {
     // Get connection
@@ -114,7 +114,8 @@ exports.updateTaskNotes = async (req, res) => {
 };
 
 exports.updateTaskPlan = async (req, res) => {
-    if (req.body.task_state !== "open") {
+    if (req.body.task_state !== "open" && req.body.task_state !== "done") {
+        console.log(req.body.task_state);
         return res.status(403).json({
             success: false,
             data: "Cannot modify plan in current state",

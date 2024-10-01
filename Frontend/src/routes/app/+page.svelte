@@ -125,7 +125,6 @@ const closePlansModal = async (event) => {
 }
 
 const openTaskModal = async (editMode, targetName) => {
-    console.log("opening task modal")
     taskModalEditMode = editMode;
     targetTaskId = targetName;
 

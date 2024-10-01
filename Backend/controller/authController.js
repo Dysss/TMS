@@ -90,6 +90,7 @@ exports.authorizeAppRoles = async (req, res, next) => {
                 error: "Unauthorized",
             });
         } else {
+            req.user = decoded;
             return next();
         }
     } catch (err) {

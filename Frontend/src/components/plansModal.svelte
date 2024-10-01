@@ -19,6 +19,7 @@ let showToast = false;
 let statusMsg = '';
 let toastType;
 let targetPlan;
+let planNames;
 
 const fetchPlanDetails = async () => {
     const response = await axiosInstance.post("/api/plan/get-plan-details", {
@@ -38,6 +39,18 @@ const fetchPlanDetails = async () => {
     targetPlan.plan_app_acronym = targetPlan.plan_app_Acronym;
 
     // console.log(targetPlan)
+}
+
+const fetchPlanNames = async () => {
+    const response = await axiosInstance.post('/api/plan/get-all-plans', {
+        app_Acronym: appAcronym
+    })
+
+    if (response.status !== 200) {
+        return plans = false;
+    }
+
+    planNames = response.data.data.map(plan => plan.plan_MVP_name);
 }
 
 const initNewPlan = () => {
@@ -85,8 +98,19 @@ const editPlan = async () => {
 
 const createPlan = async () => {
     try {
-        console.log(targetPlan);
+        // console.log(targetPlan);
         targetPlan.plan_color = targetPlan.plan_color.slice(1);
+
+        if (planNames.includes(targetPlan.plan_MVP_name)) {
+            return triggerToast("Plan MVP name already exists", 'error');
+        }
+
+        if (!targetPlan.plan_startDate || !targetPlan.plan_endDate) {
+            console.log(targetPlan.plan_startDate);
+            console.log(targetPlan.plan_endDate);
+            return triggerToast("Please input plan start and end date", 'error');
+        }
+
         let response = await axiosInstance.put("/api/plan/create-plan", targetPlan);
 
         triggerToast("Successfully created plan", 'success')
@@ -113,6 +137,7 @@ $: if (showModal) {
         fetchPlanDetails();
     } else {
         initNewPlan();
+        fetchPlanNames();
     }
 }
 </script>
@@ -140,7 +165,7 @@ $: if (showModal) {
         <input
             id="start-date"
             type="date"
-            bind:value={(targetPlan.plan_startDate)}
+            bind:value={targetPlan.plan_startDate}
             />
     </div>
     <div class="form-group">
@@ -226,5 +251,9 @@ $: if (showModal) {
 
 .modal-actions button:hover {
     background-color: #0056b3;
+}
+
+.form-group #plan-color {
+    min-height: 50px;
 }
 </style>
