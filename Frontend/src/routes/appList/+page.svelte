@@ -108,10 +108,24 @@
 		border: 1px solid #ccc;
 		border-radius: 5px;
 		text-align: left;
+		max-height: 200px;
+		overflow: hidden;
+		position: relative;
+	}
+
+	.app-card h2 {
+		font-size: 1.2em;
+		margin-bottom: 10px;
+		white-space: nowrap; /* Prevent text from wrapping */
+		overflow: hidden; /* Hide the overflow */
+		text-overflow: ellipsis; /* Show ellipses for truncated text */
 	}
 
 	.app-card p {
 		margin: 10px 0;
+		white-space: pre-wrap; /* Prevent text from wrapping */
+		overflow: hidden; /* Hide the overflow */
+		text-overflow: ellipsis; /* Show ellipses for truncated text */
 	}
 
 	button {

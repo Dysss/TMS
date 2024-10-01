@@ -80,7 +80,7 @@ exports.authorizeAppRoles = async (req, res, next) => {
         [queryResults, fields] = await pool.execute(sqlQuery, [appAcronym]);
 
         permittedGrp = queryResults[0]["app_permit_" + taskState];
-        // console.log("Found permitted groups: " + permittedGrp);
+        console.log("Found permitted groups: " + permittedGrp);
 
         [queryResults, fields] = await pool.execute(`SELECT * FROM user u JOIN user_group ug ON u.user_name = ug.user_name JOIN group_list g ON ug.group_id = g.group_id WHERE u.user_name = ? AND g.group_name = ?`, [decoded.username, permittedGrp]);
 

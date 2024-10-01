@@ -59,6 +59,7 @@
 			<div class="user-name">{username}</div>
 			<div class="user-icon">U</div>
 			<div class="dropdown">
+				<a href="/appList">App list</a>
 				<a href="/profile">Profile</a>
 				{#if isAdmin}
 					<a href="/user-management">User management</a>

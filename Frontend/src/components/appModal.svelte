@@ -109,13 +109,22 @@
 			return triggerToast("Please input an app R number", 'error');
 		}
 
+		if (targetApp.app_rnumber < 0) {
+			return triggerToast("R number cannot be negative", 'error');
+		}
+
 		// Check dates
+		if (!targetApp.app_startDate || !targetApp.app_endDate) {
+			return triggerToast("Please input start and end date", 'error');
+		}
+
 		if (Date.parse(targetApp.app_endDate) < Date.parse(targetApp.app_startDate)) {
 			return triggerToast("End date cannot be earlier than start date", 'error');
 		}
 		
 		try {
 			const response = await axiosInstance.put('/api/app/create-app', targetApp)
+			closeModal();
 		} catch (err) {
 			console.log(err);
 		}
@@ -132,6 +141,7 @@
 		
 		try {
 			const response = await axiosInstance.put('/api/app/update-app', targetApp)
+			closeModal();
 		} catch (err) {
 			console.log(err);
 		}

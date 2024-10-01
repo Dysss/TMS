@@ -167,12 +167,12 @@ const closeTaskModal = async (event) => {
     </div>
 
     <!-- Kanban -->
-    {#if taskList.length > 0}
     <div class="kanban">
         {#each taskStates as state}
         <div class="column">
             <h3>{state}</h3>
             {#each getTasksByState(state) as task}
+            {#if taskList.length > 0}
             <div class="task-card">
                 <div class="color-indicator" style="background-color: {"#" + planColors[task.task_plan]}"></div>
                 <div class="task-details">
@@ -182,11 +182,11 @@ const closeTaskModal = async (event) => {
                     <button on:click={() => openTaskModal(true, task.task_id)}>View</button>
                 </div>
             </div>
+            {/if}
             {/each}
         </div>
         {/each}
     </div>
-    {/if}
 </div>
 
 <style>

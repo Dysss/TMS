@@ -1,4 +1,5 @@
 const pool = require("../utils/db");
+const { mailer } = require("../utils/mailer");
 
 exports.getAllTasks = async (req, res) => {
     try {
@@ -179,6 +180,15 @@ exports.updateTaskState = async (req, res) => {
             let newState = stateSeq[currStateIndex + 1];
 
             let [queryResults, fields] = await pool.execute("UPDATE task SET task_state = ? WHERE task_state = ? AND task_id = ?", [newState, taskState, taskId]);
+            
+            if (newState == 'done') {
+                info = mailer.sendMail({
+                    from: '<tms@da.com>',
+                    to: '<tms_inbox@mailtrap.com>',
+                    subject: `Task ${taskId} requires your review`,
+                    text: `Hi PL, ${taskId} has been promoted to the "done" state and requires your review.`
+                }, ((info) => console.log(info)))
+            }
 
             return res.status(200).json({
                 success: true,

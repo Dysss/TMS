@@ -59,11 +59,11 @@ exports.updatePlan = async (req, res) => {
         const acronym = req.body.plan_app_acronym;
         const color = req.body.plan_color;
 
-        console.log(mvpName)
-        console.log(startDate)
-        console.log(endDate)
-        console.log(acronym)
-        console.log(color)
+        // console.log(mvpName)
+        // console.log(startDate)
+        // console.log(endDate)
+        // console.log(acronym)
+        // console.log(color)
 
         let [queryResults, fields] = await pool.execute("UPDATE plan SET plan_startdate = ?, plan_enddate = ?, plan_app_acronym = ?, plan_color = ? WHERE plan_mvp_name = ?", [startDate, endDate, acronym, color, mvpName]);
 

@@ -15,14 +15,16 @@ export let targetTaskId;
 
 const dispatch = createEventDispatcher();
 
+let loaded = false;
 let showToast = false;
 let statusMsg = '';
 let toastType;
 let targetTask;
 let targetPlan;
-let plans;
+let plans = [];
 let username;
 let addTaskNotes;
+let stateSeq = ['open', 'todolist', 'doing', 'done', 'closed'];
 
 let permissions;
 let hasOpenPerms = false;
@@ -46,15 +48,15 @@ const fetchTaskDetails = async () => {
 
     await checkDonePerms();
     await checkOpenPerms();
-
+    
     if ((targetTask.task_state == "open" && hasOpenPerms) || (targetTask.task_state == "done" && hasDonePerms)) {
         planEditable = true;
     } else {
         planEditable = false;
     }
-
+    
     // await checkPlanEditable();
-    console.log(planEditable)
+    // console.log(targetTask)
 }
 
 // Fetch list of plans
@@ -62,7 +64,7 @@ const fetchPlans = async () => {
     const response = await axiosInstance.post('/api/plan/get-all-plans', { app_Acronym: appAcronym })
 
     plans = response.data.data
-    // console.log(plans)
+    // console.log("fetched plans: ", plans)
 }
 
 // Fetch user name
@@ -162,7 +164,7 @@ const initNewTask = async () => {
         task_notes: null,
         task_plan: null,
         task_app_Acronym: appAcronym,
-        task_state: 'open',
+        task_state: 'create',
         task_creator: username,
         task_owner: username,
         task_createDate: dateStr
@@ -171,15 +173,21 @@ const initNewTask = async () => {
 }
 
 const closeModal = () => {
+    loaded = false;
     dispatch('close');
 }
 
 const createTask = async () => {
     console.log(targetTask)
 
+    const timestamp = new Date().toString()
+    targetTask.task_notes = timestamp + "␟" + targetTask.task_notes;
+    
+
     const response = await axiosInstance.put('/api/task/create-task', targetTask);
 
     // console.log("Response: ", response)
+    fetchPlans();
     closeModal();
 }
 
@@ -219,6 +227,7 @@ const updateNotes = async (stateChange=null) => {
         
         const response = await axiosInstance.put('/api/task/update-task-notes', {
             task_app_Acronym: appAcronym,
+            task_state: targetTask.task_state,
             task_id: targetTask.task_id,
             task_notes: newTaskNotes
         })
@@ -247,6 +256,7 @@ const updateTaskPlan = async () => {
 }
 
 const updateTaskState = async (action) => {
+    updateTaskPlan()
     const response = await axiosInstance.put('/api/task/update-task-state', {
         task_app_Acronym: appAcronym,
         task_id: targetTask.task_id,
@@ -275,19 +285,30 @@ const triggerToast = (message, type="info") => {
 
 $: if (showModal) {
     addTaskNotes = ""
-    fetchPlans();
-    fetchUserDetails();
-    fetchAppPermissions();
-    if (editMode) {
-        fetchTaskDetails();
-    } else {
-        initNewTask();
-    }
+    plans = [];
+    targetTask = null;
+    targetPlan = null;
+
+    ( async () => {
+        await fetchPlans();
+        await fetchUserDetails();
+        await fetchAppPermissions();
+        if (editMode) {
+            await fetchTaskDetails();
+        } else {
+            await initNewTask();
+        }
+
+        loaded = true
+    })();
 }
+
+// $: console.log("Plans during lifecycle: ", plans)
 </script>
 
 <Toast message={statusMsg} visible={showToast} type={toastType}  duration="2000" />
 
+{#if loaded}
 {#if showModal && (typeof targetTask) == 'object'}
 <div class="modal-backdrop" on:click={closeModal}></div>
 <div class="modal">
@@ -301,9 +322,13 @@ $: if (showModal) {
         <p class="task-state"><b>State:</b> {targetTask.task_state}</p>
         <label for="task-plan"><b>Plan:</b> </label>
         <select name="task-plan" disabled={!planEditable} bind:value={targetTask.task_plan}>
-            {#each plans as plan}
-            <option value={plan.plan_MVP_name}>{plan.plan_MVP_name}</option>
-            {/each}
+            <option value={null}> </option>
+            {console.log("html console.log: ", plans)}
+            {#if plans}
+                {#each plans as plan}
+                <option value={plan.plan_MVP_name}>{plan.plan_MVP_name}</option>
+                {/each}
+            {/if}
         </select>
         <p class="task-creator"><b>Creator:</b> {targetTask.task_creator}</p>
         <p class="task-owner"><b>Owner:</b> {targetTask.task_owner}</p>
@@ -326,9 +351,6 @@ $: if (showModal) {
         <textarea class="task-notes-input" bind:value={addTaskNotes}  disabled/>
         {/if}
     </div>
-    <!-- <div class="modal-actions">
-        <button>Do sometings</button>
-    </div> -->
     {:else}
     <h2>Create task</h2>
     <div class="form-group">
@@ -375,21 +397,27 @@ $: if (showModal) {
                     targetTask.task_state == "doing" && hasDoingPerms ||
                     targetTask.task_state == "done" && hasDonePerms
                 }
+                    {#if targetPlan == targetTask.task_plan || targetTask.task_state != 'done'}
                     <!-- Save changes -->
-                    <button on:click={() => {
-                        updateNotes();
-                        updateTaskPlan();
-                    }} >
-                        Save changes
-                    </button>
+                        <button on:click={() => {
+                            updateNotes();
+                            updateTaskPlan();
+                        }} >
+                            Save changes
+                        </button>
+                    {:else}
+                        <button disabled>Save changes</button>
+                    {/if}
                     <!-- Demote -->
                     {#if targetTask.task_state == "doing" || targetTask.task_state == "done"}
-                        <button on:click={() => updateTaskState('demote')}>Demote</button>
-                    {:else}
-                        <button on:click={() => triggerToast("Task cannot be demoted in the current state", 'error')} disabled>Demote</button>
+                        <button on:click={() => updateTaskState('demote')}>Demote to {stateSeq[stateSeq.indexOf(targetTask.task_state) - 1]}</button>
                     {/if}
                     <!-- Promote -->
-                    <button on:click={() => updateTaskState('promote')}>Promote</button>
+                    {#if targetPlan == targetTask.task_plan || targetTask.task_state != 'done'}
+                    <button on:click={() => updateTaskState('promote')}>Promote to {stateSeq[stateSeq.indexOf(targetTask.task_state) + 1]}</button>
+                    {:else}
+                    <button disabled>Promote</button>
+                    {/if}
                 {:else}
                     <button on:click={() => triggerToast("Insufficient permissions", 'error')} disabled >Save changes</button>
                 {/if}
@@ -400,6 +428,7 @@ $: if (showModal) {
         {/if}
     </div>
 </div>
+{/if}
 {/if}
 
 <style>

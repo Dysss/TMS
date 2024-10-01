@@ -24,7 +24,7 @@ router.put("/users/add-user", authorizeRoles("admin"), addUser);
 router.post("/users/check-group", authorizeRoles(), checkCurrUserGroup);
 
 // Group routes
-router.get("/groups/get-all-groups", authorizeRoles("admin"), getAllGroups);
+router.get("/groups/get-all-groups", authorizeRoles(), getAllGroups);
 router.put("/groups/add-group", authorizeRoles("admin"), addGroup);
 
 // Application routes
