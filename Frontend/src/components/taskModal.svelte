@@ -161,7 +161,7 @@ const initNewTask = async () => {
         task_id: taskId,
         task_name: null,
         task_description: null,
-        task_notes: null,
+        task_notes: "",
         task_plan: null,
         task_app_Acronym: appAcronym,
         task_state: 'create',
@@ -180,9 +180,12 @@ const closeModal = () => {
 const createTask = async () => {
     console.log(targetTask)
 
+    if (targetTask.task_description.length > 255) {
+        return triggerToast("Task notes cannot exceed 255 characters", 'error')
+    }
+
     const timestamp = new Date().toString()
-    targetTask.task_notes = timestamp + "␟" + targetTask.task_notes;
-    
+    targetTask.task_notes = username + " at " + timestamp + " in " + targetTask.task_state + " state " + "␟" + targetTask.task_notes + "␟" + "Task created";
 
     const response = await axiosInstance.put('/api/task/create-task', targetTask);
 
@@ -219,7 +222,7 @@ const updateNotes = async (stateChange=null) => {
             targetTask.task_notes_arr.unshift(stateChangeMsg);
         }
     
-        targetTask.task_notes_arr.unshift(timestamp);
+        targetTask.task_notes_arr.unshift(username + " at " + timestamp + " in " + targetTask.task_state + " state ");
         
         // console.log(targetTask.task_notes_arr)
         
@@ -257,6 +260,12 @@ const updateTaskPlan = async () => {
 
 const updateTaskState = async (action) => {
     updateTaskPlan()
+    if (action == "promote") {
+        updateNotes(stateSeq[stateSeq.indexOf(targetTask.task_state) + 1])
+    } else {
+        updateNotes(stateSeq[stateSeq.indexOf(targetTask.task_state) - 1])
+    }
+
     const response = await axiosInstance.put('/api/task/update-task-state', {
         task_app_Acronym: appAcronym,
         task_id: targetTask.task_id,
@@ -265,7 +274,6 @@ const updateTaskState = async (action) => {
     })
 
     await fetchTaskDetails();
-    updateNotes(targetTask.task_state)
 
     closeModal();
 
@@ -318,7 +326,7 @@ $: if (showModal) {
         <p class="task-id"><b>ID:</b> {targetTask.task_id}</p>
         <p class="task-name"><b>Name:</b> {targetTask.task_name}</p>
         <p class="task-description"><b>Description:</b> </p>
-        <p class="task-description">{targetTask.task_description}</p>
+        <textarea class="task-description-text" >{targetTask.task_description}</textarea>
         <p class="task-state"><b>State:</b> {targetTask.task_state}</p>
         <label for="task-plan"><b>Plan:</b> </label>
         <select name="task-plan" disabled={!planEditable} bind:value={targetTask.task_plan}>
@@ -505,6 +513,13 @@ $: if (showModal) {
         content: "";
         display: table;
         clear: both;
+    }
+
+    .task-description-text {
+        resize: none;
+        min-height: 10vh;
+        max-height: 10vh;
+        min-width: 100%;
     }
     
     .edit-task-sidebar {

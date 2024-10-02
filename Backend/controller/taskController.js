@@ -146,6 +146,7 @@ exports.updateTaskState = async (req, res) => {
         const action = req.body.action;
         const taskState = req.body.task_state;
         const stateSeq = ["open", "todolist", "doing", "done", "closed"];
+        const appAcronym = req.body.task_app_Acronym;
 
         // Handle demotion
         if (action == "demote") {
@@ -180,14 +181,39 @@ exports.updateTaskState = async (req, res) => {
             let newState = stateSeq[currStateIndex + 1];
 
             let [queryResults, fields] = await pool.execute("UPDATE task SET task_state = ? WHERE task_state = ? AND task_id = ?", [newState, taskState, taskId]);
-            
-            if (newState == 'done') {
-                info = mailer.sendMail({
-                    from: '<tms@da.com>',
-                    to: '<tms_inbox@mailtrap.com>',
-                    subject: `Task ${taskId} requires your review`,
-                    text: `Hi PL, ${taskId} has been promoted to the "done" state and requires your review.`
-                }, ((info) => console.log(info)))
+
+            if (newState == "done") {
+                let recipients;
+
+                let [queryResults, fields] = await pool.execute("SELECT app_permit_Done FROM application WHERE app_acronym = ?", [appAcronym]);
+
+                permitDoneGrp = queryResults[0].app_permit_Done;
+
+                if (queryResults.length > 0) {
+                    let [queryResults, fields] = await pool.execute(
+                        "SELECT email FROM user u \
+                        JOIN user_group ug ON u.user_name = ug.user_name\
+                        JOIN group_list g ON ug.group_id = g.group_id\
+                        WHERE g.group_name = ?",
+                        [permitDoneGrp]
+                    );
+
+                    console.log(queryResults);
+
+                    recipients = queryResults.map((obj) => `<${obj.email}>`);
+                    console.log(recipients);
+                    recipients = recipients.join(", ");
+                }
+
+                info = mailer.sendMail(
+                    {
+                        from: "<tms@da.com>",
+                        to: `${recipients}`,
+                        subject: `Task ${taskId} requires your review`,
+                        text: `Hi PL, ${taskId} has been promoted to the "done" state and requires your review.`,
+                    },
+                    (info) => console.log(info)
+                );
             }
 
             return res.status(200).json({

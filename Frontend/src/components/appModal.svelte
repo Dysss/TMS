@@ -113,6 +113,10 @@
 			return triggerToast("R number cannot be negative", 'error');
 		}
 
+		if (targetApp.app_rnumber % 1 != 0) {
+			return triggerToast("R number cannot have decimals", 'error');
+		}
+
 		// Check dates
 		if (!targetApp.app_startDate || !targetApp.app_endDate) {
 			return triggerToast("Please input start and end date", 'error');

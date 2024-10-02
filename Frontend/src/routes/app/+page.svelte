@@ -177,7 +177,7 @@ const closeTaskModal = async (event) => {
                 <div class="color-indicator" style="background-color: {"#" + planColors[task.task_plan]}"></div>
                 <div class="task-details">
                     <h4>{task.task_name}</h4>
-                    <p>{task.task_description}</p>
+                    <textarea>{task.task_description}</textarea>
                     <p><strong>Owner:</strong> {task.task_owner}</p>
                     <button on:click={() => openTaskModal(true, task.task_id)}>View</button>
                 </div>
@@ -253,6 +253,13 @@ const closeTaskModal = async (event) => {
 .task-details p {
     margin: 4px 0 0;
     color: #555;
+}
+
+textarea {
+    resize: none;
+    min-height: 10vh;
+    max-height: 10vh;
+    min-width: 100%;
 }
 
 .create-app button {

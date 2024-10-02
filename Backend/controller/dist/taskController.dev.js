@@ -10,6 +10,9 @@ function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
 var pool = require("../utils/db");
 
+var _require = require("../utils/mailer"),
+    mailer = _require.mailer;
+
 exports.getAllTasks = function _callee(req, res) {
   var app_acronym, _ref, _ref2, queryResults, fields;
 
@@ -296,7 +299,7 @@ exports.updateTaskPlan = function _callee5(req, res) {
 };
 
 exports.updateTaskState = function _callee6(req, res) {
-  var taskId, action, taskState, stateSeq, currStateIndex, newState, _ref11, _ref12, queryResults, fields, _currStateIndex, _newState, _ref13, _ref14, _queryResults, _fields;
+  var taskId, action, taskState, stateSeq, appAcronym, currStateIndex, newState, _ref11, _ref12, queryResults, fields, _currStateIndex, _newState, _ref13, _ref14, _queryResults, _fields, recipients, _ref15, _ref16, _queryResults2, _fields2, _ref17, _ref18, _queryResults3, _fields3;
 
   return regeneratorRuntime.async(function _callee6$(_context6) {
     while (1) {
@@ -306,15 +309,16 @@ exports.updateTaskState = function _callee6(req, res) {
           taskId = req.body.task_id;
           action = req.body.action;
           taskState = req.body.task_state;
-          stateSeq = ["open", "todolist", "doing", "done", "closed"]; // Handle demotion
+          stateSeq = ["open", "todolist", "doing", "done", "closed"];
+          appAcronym = req.body.task_app_Acronym; // Handle demotion
 
           if (!(action == "demote")) {
-            _context6.next = 19;
+            _context6.next = 20;
             break;
           }
 
           if (!(taskState !== "doing" && taskState !== "done")) {
-            _context6.next = 8;
+            _context6.next = 9;
             break;
           }
 
@@ -323,13 +327,13 @@ exports.updateTaskState = function _callee6(req, res) {
             data: "Task cannot be demoted in the current state"
           }));
 
-        case 8:
+        case 9:
           currStateIndex = stateSeq.indexOf(taskState);
           newState = stateSeq[currStateIndex - 1];
-          _context6.next = 12;
+          _context6.next = 13;
           return regeneratorRuntime.awrap(pool.execute("UPDATE task SET task_state = ? WHERE task_state = ? AND task_id = ?", [newState, taskState, taskId]));
 
-        case 12:
+        case 13:
           _ref11 = _context6.sent;
           _ref12 = _slicedToArray(_ref11, 2);
           queryResults = _ref12[0];
@@ -339,14 +343,14 @@ exports.updateTaskState = function _callee6(req, res) {
             data: queryResults
           }));
 
-        case 19:
+        case 20:
           if (!(action == "promote")) {
-            _context6.next = 31;
+            _context6.next = 52;
             break;
           }
 
           if (!(taskState == "closed")) {
-            _context6.next = 22;
+            _context6.next = 23;
             break;
           }
 
@@ -355,38 +359,88 @@ exports.updateTaskState = function _callee6(req, res) {
             data: "Task cannot be promoted in the current state"
           }));
 
-        case 22:
+        case 23:
           _currStateIndex = stateSeq.indexOf(taskState);
           _newState = stateSeq[_currStateIndex + 1];
-          _context6.next = 26;
+          _context6.next = 27;
           return regeneratorRuntime.awrap(pool.execute("UPDATE task SET task_state = ? WHERE task_state = ? AND task_id = ?", [_newState, taskState, taskId]));
 
-        case 26:
+        case 27:
           _ref13 = _context6.sent;
           _ref14 = _slicedToArray(_ref13, 2);
           _queryResults = _ref14[0];
           _fields = _ref14[1];
+
+          if (!(_newState == "done")) {
+            _context6.next = 51;
+            break;
+          }
+
+          _context6.next = 34;
+          return regeneratorRuntime.awrap(pool.execute("SELECT app_permit_Done FROM application WHERE app_acronym = ?", [appAcronym]));
+
+        case 34:
+          _ref15 = _context6.sent;
+          _ref16 = _slicedToArray(_ref15, 2);
+          _queryResults2 = _ref16[0];
+          _fields2 = _ref16[1];
+          permitDoneGrp = _queryResults2[0].app_permit_Done;
+
+          if (!(_queryResults2.length > 0)) {
+            _context6.next = 50;
+            break;
+          }
+
+          _context6.next = 42;
+          return regeneratorRuntime.awrap(pool.execute("SELECT email FROM user u \
+                        JOIN user_group ug ON u.user_name = ug.user_name\
+                        JOIN group_list g ON ug.group_id = g.group_id\
+                        WHERE g.group_name = ?", [permitDoneGrp]));
+
+        case 42:
+          _ref17 = _context6.sent;
+          _ref18 = _slicedToArray(_ref17, 2);
+          _queryResults3 = _ref18[0];
+          _fields3 = _ref18[1];
+          console.log(_queryResults3);
+          recipients = _queryResults3.map(function (obj) {
+            return "<".concat(obj.email, ">");
+          });
+          console.log(recipients);
+          recipients = recipients.join(", ");
+
+        case 50:
+          info = mailer.sendMail({
+            from: "<tms@da.com>",
+            to: "".concat(recipients),
+            subject: "Task ".concat(taskId, " requires your review"),
+            text: "Hi PL, ".concat(taskId, " has been promoted to the \"done\" state and requires your review.")
+          }, function (info) {
+            return console.log(info);
+          });
+
+        case 51:
           return _context6.abrupt("return", res.status(200).json({
             success: true,
             data: _queryResults
           }));
 
-        case 31:
-          _context6.next = 37;
+        case 52:
+          _context6.next = 58;
           break;
 
-        case 33:
-          _context6.prev = 33;
+        case 54:
+          _context6.prev = 54;
           _context6.t0 = _context6["catch"](0);
           console.log(_context6.t0);
           return _context6.abrupt("return", res.status(500).json({
             success: false
           }));
 
-        case 37:
+        case 58:
         case "end":
           return _context6.stop();
       }
     }
-  }, null, null, [[0, 33]]);
+  }, null, null, [[0, 54]]);
 };
