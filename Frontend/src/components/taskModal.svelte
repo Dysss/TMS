@@ -24,7 +24,10 @@ let targetPlan;
 let plans = [];
 let username;
 let addTaskNotes;
-let stateSeq = ['open', 'todolist', 'doing', 'done', 'closed'];
+let stateSeq = ['create', 'open', 'todolist', 'doing', 'done'];
+let stateButtons = ['Create', 'Release', 'Take on', 'To review', 'Approve'];
+let promoteLabel = "Promote";
+let demoteLabel = "Demote";
 
 let permissions;
 let hasOpenPerms = false;
@@ -32,6 +35,27 @@ let hasTodoPerms = false;
 let hasDoingPerms = false;
 let hasDonePerms = false;
 let planEditable = false;
+
+$: {
+    if (targetTask) {
+        switch (targetTask.task_state) {
+            case "open": 
+                promoteLabel = "Release Task";
+                break;
+            case "todolist":
+                promoteLabel = "Take on";
+                break;
+            case "doing":
+                promoteLabel = "Send Review"
+                demoteLabel = "Give up";
+                break;
+            case "done":
+                promoteLabel = "Approve";
+                demoteLabel = "Reject";
+                break;
+        }
+    }
+}
 
 // Fetch task details
 const fetchTaskDetails = async () => {
@@ -181,7 +205,7 @@ const createTask = async () => {
     console.log(targetTask)
 
     if (targetTask.task_description.length > 255) {
-        return triggerToast("Task notes cannot exceed 255 characters", 'error')
+        return triggerToast("Task description cannot exceed 255 characters", 'error')
     }
 
     const timestamp = new Date().toString()
@@ -280,6 +304,12 @@ const updateTaskState = async (action) => {
     // console.log(response.data)
 }
 
+// const generateButtonText (state, action) => {
+//     if (action == 'promote') {
+//         if (state == )
+//     }
+// }
+
 const triggerToast = (message, type="info") => {
     console.log("trigger toast")
     statusMsg = message;
@@ -326,7 +356,7 @@ $: if (showModal) {
         <p class="task-id"><b>ID:</b> {targetTask.task_id}</p>
         <p class="task-name"><b>Name:</b> {targetTask.task_name}</p>
         <p class="task-description"><b>Description:</b> </p>
-        <textarea class="task-description-text" >{targetTask.task_description}</textarea>
+        <textarea disabled class="task-description-text" >{targetTask.task_description}</textarea>
         <p class="task-state"><b>State:</b> {targetTask.task_state}</p>
         <label for="task-plan"><b>Plan:</b> </label>
         <select name="task-plan" disabled={!planEditable} bind:value={targetTask.task_plan}>
@@ -371,7 +401,7 @@ $: if (showModal) {
     </div>
     <div class="form-group">
         <label for="task-description">Description: </label>
-        <input
+        <textarea
             id="task-description"
             type="text"
             bind:value={targetTask.task_description}
@@ -407,9 +437,10 @@ $: if (showModal) {
                 }
                     {#if targetPlan == targetTask.task_plan || targetTask.task_state != 'done'}
                     <!-- Save changes -->
-                        <button on:click={() => {
-                            updateNotes();
-                            updateTaskPlan();
+                        <button on:click={async () => {
+                            await updateNotes();
+                            await updateTaskPlan();
+                            closeModal();
                         }} >
                             Save changes
                         </button>
@@ -418,11 +449,11 @@ $: if (showModal) {
                     {/if}
                     <!-- Demote -->
                     {#if targetTask.task_state == "doing" || targetTask.task_state == "done"}
-                        <button on:click={() => updateTaskState('demote')}>Demote to {stateSeq[stateSeq.indexOf(targetTask.task_state) - 1]}</button>
+                        <button on:click={() => updateTaskState('demote')}>{demoteLabel}</button>
                     {/if}
                     <!-- Promote -->
                     {#if targetPlan == targetTask.task_plan || targetTask.task_state != 'done'}
-                    <button on:click={() => updateTaskState('promote')}>Promote to {stateSeq[stateSeq.indexOf(targetTask.task_state) + 1]}</button>
+                    <button on:click={() => updateTaskState('promote')}>{promoteLabel}</button>
                     {:else}
                     <button disabled>Promote</button>
                     {/if}
@@ -590,6 +621,6 @@ $: if (showModal) {
 	}
 
     .form-group textarea {
-        height: 150px;
+        height: 130px;
     }
 </style>

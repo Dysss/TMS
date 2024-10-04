@@ -186,7 +186,7 @@ $: if (showModal) {
     </div>
     <div class="modal-actions">
         {#if editMode}
-        <button on:click={editPlan}>Edit Plan</button>
+        <button on:click={editPlan}>Save changes</button>
         <button on:click={closeModal}>Cancel</button>
         {:else}
         <button on:click={createPlan}>Add plan</button>

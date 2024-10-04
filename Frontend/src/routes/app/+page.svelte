@@ -85,10 +85,6 @@ const getTasksByState = (taskState) => {
     return taskList.filter(task => task.task_state == taskState);
 }
 
-// const getPlanColor = (plan) => {
-//     return plans.filter(plan => plan.plan_MVP_name)
-// }
-
 const checkCreatePerms = async () => {
     if (permissions) {
         const response = await axiosInstance.post('/api/users/check-group', { group: permissions.app_permit_Create })

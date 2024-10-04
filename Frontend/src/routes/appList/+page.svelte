@@ -69,7 +69,7 @@
 		{#each apps as app}
 			<div class="app-card">
 				<h2>{app.app_acronym}</h2>
-				<p>{app.app_description}</p>
+				<textarea>{app.app_description}</textarea>
 				<p>{app.app_rnumber}</p>
 				<button on:click={() => gotoApp(app.app_acronym)}>View</button>
 				{#if isPL}
@@ -145,4 +145,12 @@
 		border-radius: 5px;
 		cursor: pointer;
 	}
+
+	textarea {
+    resize: none;
+    min-height: 10vh;
+    max-height: 10vh;
+    min-width: 100%;
+	z-index: 1;
+}
 </style>

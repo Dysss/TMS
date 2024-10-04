@@ -198,6 +198,7 @@
 				id="app-description" 
 				bind:value={targetApp.app_description} 
 				placeholder="App description" 
+				maxlength="255"
 			/>
 		</div>
 
@@ -313,6 +314,7 @@
 		width: 100vw;
 		height: 100vh;
 		background: rgba(0, 0, 0, 0.5);
+		z-index: 99;
 	}
 
 	.modal {
@@ -356,6 +358,10 @@
 		margin-bottom: 5px;
 		border: 1px solid #ccc;
 		border-radius: 4px;
+	}
+
+	.form-group textarea {
+		min-height: 150px;
 	}
 
 	.date-fields {
