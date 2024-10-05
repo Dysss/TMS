@@ -39,13 +39,11 @@ exports.createTask = async (req, res) => {
         } = req.body;
 
         // Check that correct keys are sent
-        if (
-            username == undefined ||
+        if (username == undefined ||
             password == undefined ||
             task_name == undefined ||
-            task_appAcronym == undefined
-        ) {
-            return res.status(400).json({ code: "P001" });
+            task_appAcronym == undefined) {
+                return res.status(400).json({ code: "P001" });
         }
 
         // Login/Verify credentials
@@ -131,13 +129,6 @@ exports.createTask = async (req, res) => {
         await conn.beginTransaction();
 
         // Fetch and increment rnumber to generate task id
-        // let [app_rnumber] = (
-        //     await conn.execute(
-        //         "SELECT app_rnumber FROM application WHERE app_acronym = ?",
-        //         [task_appAcronym]
-        //     )
-        // )[0];
-        // app_rnumber = app_rnumber.app_rnumber + 1;
         const new_rnumber = appDetails.app_rnumber + 1;
         const task_id = req.body.task_appAcronym + "_" + new_rnumber.toString();
 
@@ -190,19 +181,27 @@ exports.createTask = async (req, res) => {
 
 exports.getTaskByState = async (req, res) => {
     // Check for correct URL
-    if (req.originalUrl !== "/api/v2/create-task") {
+    if (req.originalUrl !== "/api/v2/get-task-by-state") {
         return res.status(400).json({ code: "U001" });
     }
     try {
         const { username, password, task_state, task_appAcronym } = req.body;
 
-        if (
-            username == undefined ||
+        // Check tht correct keys are sent
+        if (username == undefined ||
             password == undefined ||
             task_state == undefined ||
-            task_appAcronym == undefined
-        ) {
-            return res.status(400).json({ code: "P001" });
+            task_appAcronym == undefined) {
+                return res.status(400).json({ code: "P001" });
+        }
+
+        // Check that task state is a valid state
+        if (task_state != 'open' && 
+            task_state != 'todolist' && 
+            task_state != 'doing' && 
+            task_state != 'done' && 
+            task_state != 'closed') {
+                return res.status(400).json({ code: "P002" })
         }
 
         // Login/Verify credentials
@@ -228,15 +227,139 @@ exports.getTaskByState = async (req, res) => {
         }
 
         // Check if task_appAcronym is a valid app acronym
-        const [appList] = await pool.execute(
-            "SELECT app_acronym, app_rnumber FROM application"
+        const [appDetails] = await pool.execute(
+            "SELECT app_acronym FROM application WHERE app_Acronym = ?",
+            [task_appAcronym]
         );
-        const appAcronymList = appList.map((app) => app.app_acronym);
-        if (!appAcronymList.includes(task_appAcronym)) {
+        if (appDetails.length == 0) {
             return res.status(400).json({ code: "P002" });
         }
+
+        // Fetch tasks
+        const [tasks] = await pool.execute(
+            "SELECT t.task_id, t.task_name, t.task_description, t.task_owner, p.plan_color\
+            FROM task t JOIN plan p ON t.task_plan = p.plan_MVP_name\
+            WHERE t.task_state = ?",
+            [task_state]
+        )
+
+        return res.status(200).json({
+            code: "S001",
+            data: tasks
+        })
     } catch (err) {
         console.log(err);
         return res.status(500).json({ code: "E001" });
     }
 };
+
+exports.promoteTask2Done = async (req, res) => {
+    // Check for correct URL
+    if (req.originalUrl !== "/api/v2/promote-task-to-done") {
+        return res.status(400).json({ code: "U001" });
+    }
+    
+    try {
+        // Grab variables
+        const {
+            username,
+            password,
+            task_id,
+        } = req.body;
+
+        // Check that correct keys are sent
+        if (username == undefined ||
+            password == undefined ||
+            task_id == undefined) {
+                return res.status(400).json({ code: "P001" });
+        }
+
+        // Login/Verify credentials
+        let [userDetails] = await pool.execute(
+            "SELECT password, active from user WHERE user_name = ?",
+            [username]
+        );
+
+        // Check if user exists
+        if (userDetails.length == 0) {
+            return res.status(401).json({ code: "A001" });
+        }
+
+        // Check for correct pw
+        let pwMatch = await bcrypt.compare(password, userDetails[0].password);
+        if (!pwMatch) {
+            return res.status(401).json({ code: "A001" });
+        }
+
+        // Check if user is active
+        if (userDetails[0].active != 1) {
+            return res.status(401).json({ code: "A002" });
+        }
+
+        // Check if user has permissions to promote to done
+        let task_appAcronym = task_id.replace(/_\d+$/, "");
+        let [grpPermissions] = await pool.execute(
+            "SELECT app_permit_Doing, app_permit_Done FROM application WHERE app_Acronym = ?",
+            [task_appAcronym]
+        )
+
+        const userPermitted = await checkGroup(
+            username,
+            grpPermissions[0].app_permit_Doing
+        );
+
+        if (!userPermitted) {
+            return res.status(403).json({ code: "A003" });
+        }
+
+        // Get task details if it exists
+        let [taskDetails] = await pool.execute(
+            "SELECT task_state FROM task WHERE task_id = ?", 
+            [task_id]
+        )
+
+        // Check task exists
+        if (taskDetails.length == 0) {
+            return res.status(400).code({ code: "P002" });
+        }
+
+        // Check that task state is "doing"
+        if (taskDetails[0].task_state != "doing") {
+            return res.status(400).json({ code: "P004" })
+        }
+
+        // Update task state
+        await pool.execute(
+            "UPDATE task SET task_state = ? WHERE task_id = ?",
+            ["done", task_id]
+        )
+
+        // Send email to all PLs (or group assigned to "done" state)
+        const [userEmails] = await pool.execute(
+            "SELECT email FROM user u \
+            JOIN user_group ug ON u.user_name = ug.user_name\
+            JOIN group_list g ON ug.group_id = g.group_id\
+            WHERE g.group_name = ?",
+            [grpPermissions[0].app_permit_Done]
+        )
+
+        let recipients = userEmails.length > 0 ? [userEmails].map((obj) => `<${obj.email}>`).join(", ") : "pl@da.com";
+
+        console.log(recipients)
+
+        // mailer.sendMail(
+        //     {
+        //         from: "<tms@da.com>",
+        //         to: `${recipients}`,
+        //         subject: `Task ${taskId} requires your review`,
+        //         text: `Hi PL, ${taskId} has been promoted to the "done" state and requires your review.`,
+        //     },
+        //     (info, err) => err ? console.log(err) : console.log(info)
+        // )
+
+        return res.status(200).json({ code: "S001" })
+    } catch (err) {
+        console.log(err)
+        return res.status(500).json({ code: "E001" })
+    }
+}
