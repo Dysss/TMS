@@ -36,7 +36,12 @@ app.use(express.json());
 app.use(helmet());
 app.use(cookieParser());
 app.use("/api", route);
-app.use("/api/v2", restRoute);
+app.use("/api", restRoute);
+app.use(function (req, res) {
+  res.status(404).json({
+    code: "U001"
+  });
+});
 app.listen(PORT, function () {
   console.log("Listening on port ".concat(PORT));
 });

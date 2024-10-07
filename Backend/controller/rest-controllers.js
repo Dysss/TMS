@@ -20,7 +20,7 @@ const checkGroup = async (username, groupname) => {
 
 exports.createTask = async (req, res) => {
     // Check for correct URL
-    if (req.originalUrl !== "/api/v2/create-task") {
+    if (req.originalUrl !== "/api/task/createTask") {
         return res.status(400).json({ code: "U001" });
     }
 
@@ -39,11 +39,17 @@ exports.createTask = async (req, res) => {
         } = req.body;
 
         // Check that correct keys are sent
-        if (username == undefined ||
+        if (
+            username == undefined ||
             password == undefined ||
             task_name == undefined ||
-            task_appAcronym == undefined) {
-                return res.status(400).json({ code: "P001" });
+            task_appAcronym == undefined
+        ) {
+            return res.status(400).json({ code: "P001" });
+        }
+
+        if (password.length > 10) {
+            return res.status(400).json({ code: "A001" });
         }
 
         // Login/Verify credentials
@@ -54,18 +60,18 @@ exports.createTask = async (req, res) => {
 
         // Check if user exists
         if (userDetails.length == 0) {
-            return res.status(401).json({ code: "A001" });
+            return res.status(400).json({ code: "A001" });
         }
 
         // Check for correct pw
         let pwMatch = await bcrypt.compare(password, userDetails[0].password);
         if (!pwMatch) {
-            return res.status(401).json({ code: "A001" });
+            return res.status(400).json({ code: "A001" });
         }
 
         // Check if user is active
         if (userDetails[0].active != 1) {
-            return res.status(401).json({ code: "A002" });
+            return res.status(400).json({ code: "A002" });
         }
 
         // Check if task_appAcronym is a valid app acronym
@@ -97,7 +103,7 @@ exports.createTask = async (req, res) => {
 
         // Check if app_permit_Create is assigned to any group
         if (permittedGrp.length == 0) {
-            return res.status(403).json({ code: "A003" });
+            return res.status(400).json({ code: "A003" });
         }
 
         // Check if user is assigned the permitted group
@@ -107,7 +113,7 @@ exports.createTask = async (req, res) => {
         );
 
         if (!userPermitted) {
-            return res.status(403).json({ code: "A003" });
+            return res.status(400).json({ code: "A003" });
         }
 
         // Check if task_name is within acceptable length
@@ -116,12 +122,12 @@ exports.createTask = async (req, res) => {
         }
 
         // Check if task_description is within acceptable length
-        if (task_description.length > 255) {
+        if (task_description && task_description.length > 255) {
             return res.status(400).json({ code: "P003" });
         }
 
         // Check if task_notes is within acceptable length
-        if (task_notes.length > 65535) {
+        if (task_notes && task_notes.length > 65536) {
             return res.status(400).json({ code: "P003" });
         }
 
@@ -129,7 +135,8 @@ exports.createTask = async (req, res) => {
         await conn.beginTransaction();
 
         // Fetch and increment rnumber to generate task id
-        const new_rnumber = appDetails.app_rnumber + 1;
+        const new_rnumber = appDetails[0].app_rnumber + 1;
+        console.log(appDetails[0].app_rnumber);
         const task_id = req.body.task_appAcronym + "_" + new_rnumber.toString();
 
         // Generate date
@@ -141,6 +148,21 @@ exports.createTask = async (req, res) => {
             "-" +
             currDate.getFullYear().toString();
 
+        // Handle audit log msg
+        const timestamp = new Date().toString();
+        const createMsg = `${username} created task ${task_id}`;
+        const auditMsg = `${username} at ${timestamp}`;
+
+        let new_task_notes;
+
+        if (task_notes) {
+            new_task_notes = [auditMsg, task_notes, createMsg];
+        } else {
+            new_task_notes = [auditMsg, createMsg];
+        }
+
+        new_task_notes = new_task_notes.join("␟");
+
         // Create task entry
         await conn.execute(
             "INSERT INTO task \
@@ -150,7 +172,7 @@ exports.createTask = async (req, res) => {
                 task_id,
                 task_name,
                 task_description,
-                task_notes,
+                new_task_notes,
                 task_plan,
                 task_appAcronym,
                 "open",
@@ -169,9 +191,15 @@ exports.createTask = async (req, res) => {
         // Commit transaction if successful
         await conn.commit();
 
-        return res.status(200).json({ code: "S001" });
+        return res.status(200).json({
+            code: "S001",
+            task_id: task_id,
+        });
     } catch (err) {
         await conn.rollback();
+        if (err.code == "ER_DUP_ENTRY") {
+            return res.status(400).json({ code: "T001" });
+        }
         console.log(err);
         return res.status(500).json({ code: "E001" });
     } finally {
@@ -181,27 +209,35 @@ exports.createTask = async (req, res) => {
 
 exports.getTaskByState = async (req, res) => {
     // Check for correct URL
-    if (req.originalUrl !== "/api/v2/get-task-by-state") {
+    if (req.originalUrl !== "/api/task/getTaskByState") {
         return res.status(400).json({ code: "U001" });
     }
     try {
         const { username, password, task_state, task_appAcronym } = req.body;
 
-        // Check tht correct keys are sent
-        if (username == undefined ||
+        // Check that correct keys are sent
+        if (
+            username == undefined ||
             password == undefined ||
             task_state == undefined ||
-            task_appAcronym == undefined) {
-                return res.status(400).json({ code: "P001" });
+            task_appAcronym == undefined
+        ) {
+            return res.status(400).json({ code: "P001" });
+        }
+
+        if (password.length > 10) {
+            return res.status(400).json({ code: "A001" });
         }
 
         // Check that task state is a valid state
-        if (task_state != 'open' && 
-            task_state != 'todolist' && 
-            task_state != 'doing' && 
-            task_state != 'done' && 
-            task_state != 'closed') {
-                return res.status(400).json({ code: "P002" })
+        if (
+            task_state != "open" &&
+            task_state != "todo" &&
+            task_state != "doing" &&
+            task_state != "done" &&
+            task_state != "close"
+        ) {
+            return res.status(400).json({ code: "P002" });
         }
 
         // Login/Verify credentials
@@ -212,18 +248,18 @@ exports.getTaskByState = async (req, res) => {
 
         // Check if user exists
         if (userDetails.length == 0) {
-            return res.status(401).json({ code: "A001" });
+            return res.status(400).json({ code: "A001" });
         }
 
         // Check for correct pw
         let pwMatch = await bcrypt.compare(password, userDetails[0].password);
         if (!pwMatch) {
-            return res.status(401).json({ code: "A001" });
+            return res.status(400).json({ code: "A001" });
         }
 
         // Check if user is active
         if (userDetails[0].active != 1) {
-            return res.status(401).json({ code: "A002" });
+            return res.status(400).json({ code: "A002" });
         }
 
         // Check if task_appAcronym is a valid app acronym
@@ -238,15 +274,16 @@ exports.getTaskByState = async (req, res) => {
         // Fetch tasks
         const [tasks] = await pool.execute(
             "SELECT t.task_id, t.task_name, t.task_description, t.task_owner, p.plan_color\
-            FROM task t JOIN plan p ON t.task_plan = p.plan_MVP_name\
-            WHERE t.task_state = ?",
-            [task_state]
-        )
+            FROM task t LEFT JOIN plan p ON t.task_plan = p.plan_MVP_name AND t.task_app_acronym = p.plan_app_acronym\
+            WHERE t.task_state = ?\
+            AND t.task_app_Acronym = ?",
+            [task_state, task_appAcronym]
+        );
 
         return res.status(200).json({
             code: "S001",
-            data: tasks
-        })
+            data: tasks,
+        });
     } catch (err) {
         console.log(err);
         return res.status(500).json({ code: "E001" });
@@ -255,23 +292,27 @@ exports.getTaskByState = async (req, res) => {
 
 exports.promoteTask2Done = async (req, res) => {
     // Check for correct URL
-    if (req.originalUrl !== "/api/v2/promote-task-to-done") {
+    if (req.originalUrl !== "/api/task/promoteTask2Done") {
         return res.status(400).json({ code: "U001" });
     }
-    
+
+    const conn = await pool.getConnection();
+
     try {
         // Grab variables
-        const {
-            username,
-            password,
-            task_id,
-        } = req.body;
+        const { username, password, task_id } = req.body;
 
         // Check that correct keys are sent
-        if (username == undefined ||
+        if (
+            username == undefined ||
             password == undefined ||
-            task_id == undefined) {
-                return res.status(400).json({ code: "P001" });
+            task_id == undefined
+        ) {
+            return res.status(400).json({ code: "P001" });
+        }
+
+        if (password.length > 10) {
+            return res.status(400).json({ code: "A001" });
         }
 
         // Login/Verify credentials
@@ -282,26 +323,26 @@ exports.promoteTask2Done = async (req, res) => {
 
         // Check if user exists
         if (userDetails.length == 0) {
-            return res.status(401).json({ code: "A001" });
+            return res.status(400).json({ code: "A001" });
         }
 
         // Check for correct pw
         let pwMatch = await bcrypt.compare(password, userDetails[0].password);
         if (!pwMatch) {
-            return res.status(401).json({ code: "A001" });
+            return res.status(400).json({ code: "A001" });
         }
 
         // Check if user is active
         if (userDetails[0].active != 1) {
-            return res.status(401).json({ code: "A002" });
+            return res.status(400).json({ code: "A002" });
         }
 
         // Check if user has permissions to promote to done
-        let task_appAcronym = task_id.replace(/_\d+$/, "");
+        let task_appAcronym = task_id.replace(/_[^_]*$/, "");
         let [grpPermissions] = await pool.execute(
             "SELECT app_permit_Doing, app_permit_Done FROM application WHERE app_Acronym = ?",
             [task_appAcronym]
-        )
+        );
 
         const userPermitted = await checkGroup(
             username,
@@ -309,57 +350,95 @@ exports.promoteTask2Done = async (req, res) => {
         );
 
         if (!userPermitted) {
-            return res.status(403).json({ code: "A003" });
+            return res.status(400).json({ code: "A003" });
         }
 
         // Get task details if it exists
         let [taskDetails] = await pool.execute(
-            "SELECT task_state FROM task WHERE task_id = ?", 
+            "SELECT task_state FROM task WHERE task_id = ?",
             [task_id]
-        )
+        );
 
         // Check task exists
         if (taskDetails.length == 0) {
-            return res.status(400).code({ code: "P002" });
+            return res.status(400).json({ code: "P002" });
         }
 
         // Check that task state is "doing"
         if (taskDetails[0].task_state != "doing") {
-            return res.status(400).json({ code: "P004" })
+            return res.status(400).json({ code: "P004" });
         }
 
+        // Start transaction to update task state and notes
+        await conn.beginTransaction();
+
         // Update task state
-        await pool.execute(
+        const [results] = await conn.execute(
             "UPDATE task SET task_state = ? WHERE task_id = ?",
             ["done", task_id]
-        )
+        );
+
+        if (results.affectedRows === 0) {
+            return res.status(400).json({ code: "T001" });
+        }
+
+        // Handle audit log msg
+        const timestamp = new Date().toString();
+        const promoteMsg = "Task state updated to Done";
+        const auditMsg = `${username} at ${timestamp} in Doing state`;
+        let [task_notes] = await conn.execute(
+            "SELECT task_notes FROM task WHERE task_id = ?",
+            [task_id]
+        );
+
+        if (task_notes.length == 0) {
+            task_notes = [];
+        } else {
+            task_notes = task_notes[0].task_notes.split("␟");
+        }
+        task_notes.unshift(promoteMsg);
+        task_notes.unshift(auditMsg);
+
+        let new_task_notes = task_notes.join("␟");
+
+        await conn.execute("UPDATE task SET task_notes = ? WHERE task_id = ?", [
+            new_task_notes,
+            task_id,
+        ]);
 
         // Send email to all PLs (or group assigned to "done" state)
-        const [userEmails] = await pool.execute(
+        const [userEmails] = await conn.execute(
             "SELECT email FROM user u \
             JOIN user_group ug ON u.user_name = ug.user_name\
             JOIN group_list g ON ug.group_id = g.group_id\
             WHERE g.group_name = ?",
             [grpPermissions[0].app_permit_Done]
-        )
+        );
 
-        let recipients = userEmails.length > 0 ? [userEmails].map((obj) => `<${obj.email}>`).join(", ") : "pl@da.com";
+        let recipients =
+            userEmails.length > 0
+                ? userEmails.map((obj) => `<${obj.email}>`).join(", ")
+                : "pl@da.com";
 
-        console.log(recipients)
+        console.log(recipients);
+        mailer.sendMail(
+            {
+                from: "<tms@da.com>",
+                to: `${recipients}`,
+                subject: `Task ${task_id} requires your review`,
+                text: `Hi PL, ${task_id} has been promoted to the "done" state and requires your review.`,
+            },
+            (info, err) => (err ? console.log(err) : console.log(info))
+        );
 
-        // mailer.sendMail(
-        //     {
-        //         from: "<tms@da.com>",
-        //         to: `${recipients}`,
-        //         subject: `Task ${taskId} requires your review`,
-        //         text: `Hi PL, ${taskId} has been promoted to the "done" state and requires your review.`,
-        //     },
-        //     (info, err) => err ? console.log(err) : console.log(info)
-        // )
+        await conn.commit();
 
-        return res.status(200).json({ code: "S001" })
+        return res.status(200).json({ code: "S001" });
     } catch (err) {
-        console.log(err)
-        return res.status(500).json({ code: "E001" })
+        console.log(err);
+        await conn.rollback();
+        return res.status(500).json({ code: "E001" });
+    } finally {
+        await conn.release();
     }
-}
+};
